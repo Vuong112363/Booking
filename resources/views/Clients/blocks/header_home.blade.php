@@ -104,15 +104,15 @@
                 </div>
                 
                 <div class="d-flex align-items-center py-10">
-                    
-                    <div class="nav-search me-3">
-                        <button class="far fa-search"></button>
-                        <form action="#" class="hide">
-                            <input type="text" placeholder="Tìm kiếm..." class="searchbox" required="">
-                            <button type="submit" class="searchbutton far fa-search"></button>
-                        </form>
-                    </div>
-                    
+                    <!-- Nút Tìm kiếm -->
+<div class="nav-search me-3">
+    <button class="far fa-search" id="toggle-search-btn"></button>
+    
+    <form action="{{ route('Tours') }}" method="GET" id="search-form" class="hide">
+        <input type="text" name="destination" placeholder="Tìm kiếm điểm đến..." class="searchbox" required="">
+        <button type="submit" class="searchbutton far fa-search"></button>
+    </form>
+</div>
                     <a href="{{ route('contact') }}" class="theme-btn style-two bgc-secondary me-3">
                         <span data-hover="Đặt Ngay">Đặt Ngay</span>
                         <i class="fal fa-arrow-right"></i>

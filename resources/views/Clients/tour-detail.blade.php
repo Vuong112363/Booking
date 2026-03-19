@@ -331,108 +331,90 @@
                                 </div>
                             </div>
                         </div>
-                        
+                        <!-- Đánh giá và bình luận  FROM-->
                         <h3>Add Reviews</h3>
-                        <form id="comment-form" class="comment-form bgc-lighter z-1 rel mt-30" name="review-form" action="#" method="post" data-aos="fade-up" data-aos-duration="1500" data-aos-offset="50">
-                           <div class="comment-review-wrap">
-                               <div class="comment-ratting-item">
-                                    <span class="title">Services</span>
-                                    <div class="ratting">
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star-half-alt"></i>
-                                    </div>
-                                </div>
-                               <div class="comment-ratting-item">
-                                    <span class="title">Guides</span>
-                                    <div class="ratting">
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star-half-alt"></i>
-                                    </div>
-                                </div>
-                               <div class="comment-ratting-item">
-                                    <span class="title">Price</span>
-                                    <div class="ratting">
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star-half-alt"></i>
-                                    </div>
-                                </div>
-                               <div class="comment-ratting-item">
-                                    <span class="title">Safety</span>
-                                    <div class="ratting">
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star-half-alt"></i>
-                                    </div>
-                                </div>
-                               <div class="comment-ratting-item">
-                                    <span class="title">Foods</span>
-                                    <div class="ratting">
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star-half-alt"></i>
-                                    </div>
-                                </div>
-                               <div class="comment-ratting-item">
-                                    <span class="title">Hotels</span>
-                                    <div class="ratting">
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star"></i>
-                                        <i class="fas fa-star-half-alt"></i>
-                                    </div>
-                                </div>
-                            </div>
-                            <hr class="mt-30 mb-40">
-                            <h5>Leave Feedback</h5>
-                            <div class="row gap-20 mt-20">
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="full-name">Name</label>
-                                        <input type="text" id="full-name" name="full-name" class="form-control" value="" required="">
-                                    </div>
-                                </div>
-                                <div class="col-md-6">
-                                    <div class="form-group">
-                                        <label for="phone">Phone</label>
-                                        <input type="text" id="phone" name="phone" class="form-control" value="" required="">
-                                    </div>
-                                </div>
-                                <div class="col-md-12">
-                                    <div class="form-group">
-                                        <label for="email-address">Email</label>
-                                        <input type="email" id="email-address" name="email" class="form-control" value="" required="">
-                                    </div>
-                                </div>
-                                <div class="col-md-12">
-                                    <div class="form-group">
-                                        <label for="message">Comments</label>
-                                        <textarea name="message" id="message" class="form-control" rows="5" required=""></textarea>
-                                    </div>
-                                </div>
-                                <div class="col-md-12">
-                                    <div class="form-group mb-0">
-                                        <button type="submit" class="theme-btn bgc-secondary style-two">
-                                            <span data-hover="Submit reviews">Submit reviews</span>
-                                            <i class="fal fa-arrow-right"></i>
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </form>
-                        
+@if(session()->has('userid'))
+
+<form action="{{ route('review.store') }}" method="post">
+@csrf
+
+<input type="hidden" name="tourid" value="{{ $tourDetail->tourid }}">
+
+<div class="comment-review-wrap">
+
+<div class="comment-ratting-item">
+<span class="title">Đánh giá tour</span>
+
+<div class="form-group">
+<select name="rating" class="form-control" required>
+
+<option value="5">⭐⭐⭐⭐⭐ (5 sao)</option>
+<option value="4">⭐⭐⭐⭐ (4 sao)</option>
+<option value="3">⭐⭐⭐ (3 sao)</option>
+<option value="2">⭐⭐ (2 sao)</option>
+<option value="1">⭐ (1 sao)</option>
+
+</select>
+</div>
+
+</div>
+
+</div>
+
+<hr class="mt-30 mb-40">
+
+<h5>Leave Feedback</h5>
+
+<div class="row gap-20 mt-20">
+
+<div class="col-md-6">
+<div class="form-group">
+<label>Name</label>
+<input type="text" class="form-control" value="{{ session('username') ?? '' }}" disabled>
+</div>
+</div>
+
+<div class="col-md-6">
+<div class="form-group">
+<label>Email</label>
+<input type="email" class="form-control" value="{{ session('email') ?? '' }}" disabled>
+</div>
+</div>
+
+<div class="col-md-12">
+<div class="form-group">
+<label>Comments</label>
+
+<textarea name="comment" class="form-control" rows="5" required></textarea>
+
+</div>
+</div>
+
+<div class="col-md-12">
+<div class="form-group mb-0">
+
+<button type="submit" class="theme-btn bgc-secondary style-two">
+
+<span data-hover="Submit reviews">Submit reviews</span>
+
+<i class="fal fa-arrow-right"></i>
+
+</button>
+
+</div>
+</div>
+
+</div>
+
+</form>
+
+@else
+
+<div class="alert alert-warning">
+Vui lòng <a href="{{ route('login') }}">đăng nhập</a> để đánh giá tour.
+</div>
+
+@endif
                     </div>
                     <div class="col-lg-4 col-md-8 col-sm-10 rmt-75">
                         <div class="blog-sidebar tour-sidebar">

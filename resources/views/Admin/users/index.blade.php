@@ -97,7 +97,20 @@
                                         <i class="fas fa-user-check"></i> Mở
                                     </a>
                                 @endif
-                                
+                                        {{-- Cấp / gỡ quyền admin --}}
+        @if($user->role == 0)
+            <a href="{{ route('admin.users.makeAdmin', $user->userid) }}"
+               class="btn btn-sm btn-outline-primary border-0"
+               onclick="return confirm('Cấp quyền admin cho user này?')">
+                <i class="fas fa-user-shield"></i> Admin
+            </a>
+        @else
+            <a href="{{ route('admin.users.removeAdmin', $user->userid) }}"
+               class="btn btn-sm btn-outline-secondary border-0"
+               onclick="return confirm('Thu hồi quyền admin?')">
+                <i class="fas fa-user-minus"></i> Gỡ
+            </a>
+        @endif
                                 <a href="{{ route('admin.users.delete', $user->userid) }}" 
                                    class="btn btn-sm btn-outline-danger border-0" 
                                    title="Xóa vĩnh viễn" 

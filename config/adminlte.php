@@ -14,7 +14,7 @@ return [
     |
     */
 
-    'title' => 'AdminLTE 3',
+    'title' => 'GoViet Admin',
     'title_prefix' => '',
     'title_postfix' => '',
 
@@ -136,9 +136,9 @@ return [
     'usermenu_enabled' => true,
     'usermenu_header' => false,
     'usermenu_header_class' => 'bg-primary',
-    'usermenu_image' => false,
-    'usermenu_desc' => false,
-    'usermenu_profile_url' => false,
+    'usermenu_image' => true,
+    'usermenu_desc' => true,
+    'usermenu_profile_url' => true,
 
     /*
     |--------------------------------------------------------------------------
@@ -256,8 +256,8 @@ return [
     |
     */
 
-    'use_route_url' => false,
-    'dashboard_url' => 'home',
+    'use_route_url' => true,
+    'dashboard_url' => 'admin.dashboard',
     'logout_url' => 'logout',
     'login_url' => 'login',
     'register_url' => 'register',
@@ -315,6 +315,11 @@ return [
             'type' => 'sidebar-menu-search',
             'text' => 'search',
         ],
+        [
+        'text' => 'Bảng điều khiển',
+        'route'  => 'admin.dashboard',
+        'icon' => 'fas fa-tachometer-alt',
+    ],
         [
         'text' => 'Quản lý Tour',
         'url'  => 'admin/tours',

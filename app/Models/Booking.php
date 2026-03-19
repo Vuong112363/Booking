@@ -24,7 +24,11 @@ protected $fillable = [
 'numchildren',
 'totalprice',
 'bookingstatus',
-'specialrequest'
+'specialrequest',
+'paymentmethod',
+    'deposit_amount',
+    'paid_amount',
+    'paymentstatus'
 
 ];
 

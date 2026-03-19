@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\DB;
 // Gọi Model Tours từ thư mục Clients và gán bí danh là Tour để code ngắn gọn
 use App\Models\Clients\Tours as Tour; 
 use App\Models\TourImage;
+use App\Models\Booking;
 
 class TourController extends Controller
 {
@@ -133,7 +134,7 @@ class TourController extends Controller
     // ==========================================
     // 5. CẬP NHẬT TOUR VÀ ẢNH
     // ==========================================
-    public function update(Request $request, $id)
+public function update(Request $request, $id)
     {
         $request->validate([
             'title' => 'required|max:255',
@@ -146,6 +147,7 @@ class TourController extends Controller
 
         $tour = Tour::findOrFail($id);
         
+        // 1. Cập nhật các trường dữ liệu text
         $tour->title = $request->title;
         $tour->duration = $request->duration;
         $tour->destination = $request->destination;
@@ -159,7 +161,7 @@ class TourController extends Controller
         $tour->description = $request->description;
         $tour->time = $request->time;
 
-        // Cập nhật Ảnh Chính
+        // 2. Cập nhật Ảnh Chính (CHỈ XỬ LÝ 1 LẦN)
         if ($request->hasFile('image_main')) {
             // Xóa ảnh cũ đi
             if ($tour->images) {
@@ -175,41 +177,27 @@ class TourController extends Controller
             $tour->images = $filename;
         }
 
+        // Lưu toàn bộ thông tin tour (CHỈ GỌI LỆNH SAVE 1 LẦN Ở ĐÂY)
         $tour->save();
+
+        // 3. Xử lý Lịch trình (Timeline)
         if ($request->has('timeline_title')) {
-    // Xóa lịch trình cũ trong DB
-    DB::table('tbl_timeline')->where('tourid', $id)->delete();
+            // Xóa lịch trình cũ trong DB
+            DB::table('tbl_timeline')->where('tourid', $id)->delete();
 
-    // Thêm lại lịch trình mới
-    foreach ($request->timeline_title as $key => $title) {
-        if (!empty($title)) {
-            DB::table('tbl_timeline')->insert([
-                'tourid'      => $tour->tourid,
-                'title'       => $title,
-                'description' => $request->timeline_description[$key] ?? ''
-            ]);
-        }
-    }
-}
-        $tour->time = $request->time;
-
-        // Cập nhật Ảnh Chính
-        if ($request->hasFile('image_main')) {
-            if ($tour->images) {
-                $oldImagePath = public_path('clients/assets/images/gallery-tours/' . $tour->images);
-                if (File::exists($oldImagePath)) {
-                    File::delete($oldImagePath);
+            // Thêm lại lịch trình mới
+            foreach ($request->timeline_title as $key => $title) {
+                if (!empty($title)) {
+                    DB::table('tbl_timeline')->insert([
+                        'tourid'      => $tour->tourid,
+                        'title'       => $title,
+                        'description' => $request->timeline_description[$key] ?? ''
+                    ]);
                 }
             }
-            $file = $request->file('image_main');
-            $filename = time() . '_main_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            $file->move(public_path('clients/assets/images/gallery-tours'), $filename);
-            $tour->images = $filename;
         }
 
-        $tour->save();
-
-        // ---- THÊM MỚI TỪ ĐÂY: XÓA CÁC ẢNH CŨ NẾU NGƯỜI DÙNG BẤM NÚT "X" ----
+        // 4. XÓA CÁC ẢNH CŨ TRONG GALLERY NẾU NGƯỜI DÙNG BẤM NÚT "X"
         if ($request->has('delete_images')) {
             foreach ($request->delete_images as $imageId) {
                 $img = TourImage::find($imageId);
@@ -225,7 +213,7 @@ class TourController extends Controller
             }
         }
 
-        // Thêm Ảnh Gallery Mới (Không xóa ảnh cũ, chỉ add thêm)
+        // 5. Thêm Ảnh Gallery Mới (Không xóa ảnh cũ, chỉ add thêm)
         if ($request->hasFile('image_gallery')) {
             foreach ($request->file('image_gallery') as $galleryFile) {
                 $galleryName = time() . '_gallery_' . uniqid() . '.' . $galleryFile->getClientOriginalExtension();
@@ -242,16 +230,15 @@ class TourController extends Controller
 
         return redirect()->route('admin.tours.index')->with('success', 'Đã cập nhật Tour thành công!');
     }
-
     // ==========================================
     // 6. XÓA TOUR VÀ DỌN DẸP ẢNH TRÊN SERVER
     // ==========================================
 public function delete($id)
     {
-        $tour = Tour::with(['tourImages', 'bookings'])->findOrFail($id);
+        $tour = Tour::with(['tourImages', 'booking'])->findOrFail($id);
 
         // NẾU CÓ NGƯỜI ĐẶT TOUR RỒI THÌ KHÔNG CHO XÓA, CHỈ CHO ĐỔI TRẠNG THÁI TẠM NGƯNG
-        if ($tour->bookings()->count() > 0) {
+        if ($tour->booking()->count() > 0) {
             return redirect()->route('admin.tours.index')->with('error', 'Không thể xóa Tour này vì đã có người đặt. Bạn chỉ có thể chuyển trạng thái sang Tạm ngưng!');
         }
 

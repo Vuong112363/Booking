@@ -7,13 +7,8 @@ use Illuminate\Support\Facades\DB;
 
 class UserController extends Controller
 {
-    
-    public function __construct()
-{
-    if(session('role') != 1){
-        abort(403,'Bạn không có quyền truy cập');
-    }
-}
+
+
 
 // danh sách user
 public function index()
@@ -46,6 +41,34 @@ public function active($id)
     return redirect()->back();
 }
 
+public function makeAdmin($id)
+{
+    DB::table('tbl_users')
+        ->where('userid', $id)
+        ->update(['role' => 1]);
+
+    // nếu user đang login chính là người vừa được cấp quyền
+    if (session('user') && session('user')->userid == $id) {
+        $user = DB::table('tbl_users')->where('userid', $id)->first();
+        session(['user' => $user]);
+    }
+
+    return back()->with('success', 'Đã cấp quyền Admin');
+}   
+public function removeAdmin($id)
+{
+    DB::table('tbl_users')
+        ->where('userid', $id)
+        ->update(['role' => 0]);
+
+    // nếu chính user đó đang đăng nhập → cập nhật lại session
+    if (session('user') && session('user')->userid == $id) {
+        $user = DB::table('tbl_users')->where('userid', $id)->first();
+        session(['user' => $user]);
+    }
+
+    return back()->with('success', 'Đã thu hồi quyền Admin');
+}
 
 // xóa user
 public function delete($id)

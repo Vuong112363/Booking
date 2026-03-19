@@ -127,23 +127,23 @@
                 <!-- Payment Method -->
                 <h2 class="booking-header">Phương Thức Thanh Toán</h2>
 
-                <label class="payment-option">
-                    <input type="radio" name="payment" required>
-                    <img src="{{ asset('clients/assets/images/logos/logo.png') }}" alt="Office Payment">
-                    Thanh toán tại văn phòng
-                </label>
-
-                <label class="payment-option">
-                    <input type="radio" name="payment" required>
-                    <img src="{{ asset('clients/assets/images/checkout/paypal.png') }}" alt="PayPal">
+                <label class="payment-option d-block mb-3 p-3 border rounded">
+                    <input type="radio" name="paymentmethod" value="paypal" required>
+                    <img src="{{ asset('clients/assets/images/checkout/paypal.png') }}" alt="PayPal" style="height: 25px; margin: 0 10px;">
                     Thanh toán bằng PayPal
                 </label>
 
-                <label class="payment-option">
-                    <input type="radio" name="payment" required>
-                    <img src="{{ asset('clients/assets/images/checkout/momo.png') }}" alt="MoMo">
-                    Thanh toán bằng Momo
-                </label>
+<label class="payment-option d-block mb-3 p-3 border rounded">
+    <input type="radio" name="paymentmethod" value="momo" required>
+    <img src="https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png" alt="MoMo" style="height:25px;margin:0 10px;">
+    Thanh toán cọc (30%) trực tuyến bằng Ví MoMo
+</label>
+
+<label class="payment-option d-block mb-3 p-3 border rounded">
+    <input type="radio" name="paymentmethod" value="cash" required>
+    <i class="fas fa-money-bill-wave text-success" style="font-size: 20px; margin: 0 10px;"></i>
+    Tiền mặt / Chuyển khoản (Liên hệ tư vấn viên để cọc 30%)
+</label>
 
 
             </div>
@@ -183,6 +183,12 @@
     <div>
         <span>Tổng cộng:</span>
         <span id="totalPrice">0 VNĐ</span>
+    </div>
+</div>
+<div class="summary-item deposit-price">
+    <div>
+        <span style="color: #e53935; font-weight: bold;">Cần thanh toán cọc (30%):</span>
+        <span id="depositPrice" style="color: #e53935; font-weight: bold; font-size: 1.2rem;">0 VNĐ</span>
     </div>
 </div>
                     <div class="order-coupon">
@@ -231,6 +237,7 @@ document.addEventListener("DOMContentLoaded", function () {
         let totalAdult = adults * priceAdult;
         let totalChild = children * priceChild;
         let grandTotal = totalAdult + totalChild;
+        let depositTotal = grandTotal * 0.3; // Tính 30% cọc
 
         // --- CẬP NHẬT HIỂN THỊ (Dùng querySelectorAll để quét hết mọi chỗ trên trang) ---
         
@@ -242,6 +249,7 @@ document.addEventListener("DOMContentLoaded", function () {
         document.querySelectorAll("#priceAdultDisplay").forEach(el => el.innerText = totalAdult.toLocaleString('vi-VN') + " VNĐ");
         document.querySelectorAll("#priceChildDisplay").forEach(el => el.innerText = totalChild.toLocaleString('vi-VN') + " VNĐ");
         document.querySelectorAll("#totalPrice").forEach(el => el.innerText = grandTotal.toLocaleString('vi-VN') + " VNĐ");
+        document.querySelectorAll("#depositPrice").forEach(el => el.innerText = depositTotal.toLocaleString('vi-VN') + " VNĐ");
     }
 
     // 3. Xử lý nút Bấm Tăng / Giảm
