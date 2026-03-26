@@ -1,7 +1,7 @@
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 @include('Clients.blocks.header')
 
-
-        <!-- Page Banner Start -->
         <section class="page-banner-two rel z-1">
             <div class="container-fluid">
                 <hr class="mt-0">
@@ -18,9 +18,7 @@
                 </div>
             </div>
         </section>
-        <!-- Page Banner End -->
-
-<div class="tour-gallery">
+        <div class="tour-gallery">
             <div class="container-fluid">
                 <div class="row gap-10 justify-content-center rel">
                     <div class="col-lg-4 col-md-6">
@@ -32,7 +30,7 @@
                         </div>
                     </div>
                     <div class="col-lg-4 col-md-6">
-                        <div class="gallery-item .gallery-between">
+                        <div class="gallery-item gallery-between">
                             <img src="{{ asset('clients/assets/images/gallery-tours/' . ($tourDetail->images[2] ?? 'default.jpg')) }}" alt="Destination">
                         </div>
                     </div>
@@ -55,10 +53,6 @@
                 </div>
             </div>
         </div>
-        <!-- Tour Gallery End -->
-        
-        
-        <!-- Tour Header Area start -->
         <section class="tour-header-area pt-70 rel z-1">
             <div class="container">
                 <div class="row justify-content-between">
@@ -87,10 +81,6 @@
                 <hr class="mt-50 mb-70">
             </div>
         </section>
-        <!-- Tour Header Area end -->
-        
-        
-        <!-- Tour Details Area start -->
         <section class="tour-details-page pb-100">
             <div class="container">
                 <div class="row">
@@ -192,251 +182,278 @@
                             <iframe src="https://www.google.com/maps/embed?pb=!1m10!1m8!1m3!1d96777.16150026117!2d-74.00840582560909!3d40.71171357405996!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sbd!4v1706508986625!5m2!1sen!2sbd" style="border:0; width: 100%;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
                         </div>
 
-<h3>Clients Reviews</h3>
-<div class="clients-reviews bgc-black mt-30 mb-60">
-    <div class="left">
-        <b>{{ $averageRating }}</b>
-        <span>({{ $totalReviews }} reviews)</span>
-        <div class="ratting">
-            @for($i = 1; $i <= 5; $i++)
-                @if($i <= round($averageRating))
-                    <i class="fas fa-star"></i>
-                @else
-                    <i class="far fa-star"></i>
-                @endif
-            @endfor
-        </div>
-    </div>
-    
-    <div class="right">
-        @for($i = 5; $i >= 1; $i--)
-        <div class="ratting-item">
-            <span class="title">{{ $i }} Sao</span>
-            
-            <span class="line"><span style="width: {{ $ratingPercentages[$i] ?? 0 }}%;"></span></span>
-            
-            <div class="ratting text-white" style="font-size: 14px; margin-left: 10px;">
-                ({{ $ratingCounts[$i] ?? 0 }})
-            </div>
-        </div>
-        @endfor
-    </div>
-</div>
-<h3>Clients Comments ({{ $totalReviews }})</h3>
-<div class="comments mt-30 mb-60">
-    
-    @forelse($reviews as $review)
-        <div class="comment-body" data-aos="fade-up" data-aos-duration="1500" data-aos-offset="50">
-<div class="author-thumb">
-    <img src="{{ isset($review->user->avatar) && $review->user->avatar ? asset('clients/assets/images/avatars/' . $review->user->avatar) : asset('clients/assets/images/avatars/default.png') }}" alt="Author">
-</div>
-            <div class="content">
-                <h6>{{ $review->user->name ?? $review->user->username ?? 'Khách hàng' }}</h6>
-                
-                <div class="ratting">
-                    @for($i = 1; $i <= 5; $i++)
-                        @if($i <= $review->rating)
-                            <i class="fas fa-star"></i>
-                        @else
-                            <i class="far fa-star"></i>
-                        @endif
-                    @endfor
-                </div>
-                
-                <span class="time">{{ \Carbon\Carbon::parse($review->createdat)->format('d/m/Y H:i') }}</span>
-                
-                <p>{{ $review->comment }}</p>
-                @if(!empty($review->admin_reply))
-    <div class="admin-reply-box mt-10 p-3" style="background-color: #f8f9fa; border-left: 3px solid #ff6a00; border-radius: 5px;">
-        <h6 style="color: #ff6a00; font-size: 14px; margin-bottom: 5px;"><i class="fas fa-headset"></i> Phản hồi từ quản trị viên:</h6>
-        <p class="mb-0" style="font-size: 14px;">{{ $review->admin_reply }}</p>
-    </div>
-@endif
-                
-            </div>
-        </div>
-    @empty
-        <div class="alert alert-info">
-            Chưa có đánh giá nào cho tour này. Hãy là người đầu tiên để lại nhận xét!
-        </div>
-    @endforelse
-
-</div>
-                        <!-- Đánh giá và bình luận  FROM-->
-<hr class="mt-50 mb-40">
-
-@if(session('success'))
-    <div class="alert alert-success">{{ session('success') }}</div>
-@endif
-@if(session('error'))
-    <div class="alert alert-danger">{{ session('error') }}</div>
-@endif
-@if ($errors->any())
-    <div class="alert alert-danger">
-        <ul class="mb-0">
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-@endif
-
-<h3>Add Reviews</h3>
-
-@if(session()->has('userid'))
-    
-    @if($hasBooked)
-        <form action="{{ route('review.store') }}" method="post" class="mt-30">
-            @csrf
-            <input type="hidden" name="tourid" value="{{ $tourDetail->tourid }}">
-            
-            <div class="comment-review-wrap">
-                <div class="comment-ratting-item">
-                    <span class="title">Đánh giá tour</span>
-                    <div class="form-group">
-                        <select name="rating" class="form-control" required>
-                            <option value="5">⭐⭐⭐⭐⭐ (5 sao)</option>
-                            <option value="4">⭐⭐⭐⭐ (4 sao)</option>
-                            <option value="3">⭐⭐⭐ (3 sao)</option>
-                            <option value="2">⭐⭐ (2 sao)</option>
-                            <option value="1">⭐ (1 sao)</option>
-                        </select>
-                    </div>
-                </div>
-            </div>
-            
-            <hr class="mt-30 mb-40">
-            <h5>Leave Feedback</h5>
-            <div class="row gap-20 mt-20">
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label>Name</label>
-                        <input type="text" class="form-control" value="{{ session('username') ?? '' }}" disabled>
-                    </div>
-                </div>
-                <div class="col-md-6">
-                    <div class="form-group">
-                        <label>Email</label>
-                        <input type="email" class="form-control" value="{{ session('email') ?? '' }}" disabled>
-                    </div>
-                </div>
-                <div class="col-md-12">
-                    <div class="form-group">
-                        <label>Comments</label>
-                        <textarea name="comment" class="form-control" rows="5" placeholder="Chia sẻ trải nghiệm của bạn về tour này..." required></textarea>
-                    </div>
-                </div>
-                <div class="col-md-12">
-                    <div class="form-group mb-0">
-                        <button type="submit" class="theme-btn bgc-secondary style-two">
-                            <span data-hover="Submit reviews">Submit reviews</span>
-                            <i class="fal fa-arrow-right"></i>
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </form>
-    @else
-        <div class="alert alert-info mt-30">
-            <i class="fas fa-info-circle"></i> Bạn cần đặt và trải nghiệm tour này để có thể viết đánh giá.
-        </div>
-    @endif
-
-@else
-    <div class="alert alert-warning mt-30">
-        <i class="fas fa-exclamation-triangle"></i> Vui lòng <a href="{{ route('login') }}" style="text-decoration: underline; font-weight: bold;">đăng nhập</a> để đánh giá tour.
-    </div>
-@endif
-
-                    </div>
-                    <div class="col-lg-4 col-md-8 col-sm-10 rmt-75">
-                        <div class="blog-sidebar tour-sidebar">
-                           
-                            <div class="widget widget-booking" data-aos="fade-up" data-aos-duration="1500" data-aos-offset="50">
-                                <h5 class="widget-title">Đặt Tour</h5>
-<form action="{{ route('booking.store', ['id' => $tourDetail->tourid]) }}" method="post">
-@csrf
-                                    <div class="date mb-25">
-                                        <b>Ngày bắt đầu:</b>
-                                        <input type="type" disabled value="{{ date('d-m-Y', strtotime($tourDetail->startdate)) }}"name="startdate"disabled>
-                                    </div>
-                                    <hr>
-                                    <div class="date mb-25">
-                                        <b>Ngày kết thúc:</b>
-                                        <input type="type" disabled value="{{ date('d-m-Y', strtotime($tourDetail->enddate)) }}"name="enddate"disabled>
-                                    </div>
-                                    <hr>
-                                    <div class="time py-5">
-                                        <b>Thời gian :</b>
-                                        <p>{{ $tourDetail->time }}</p>
-                                        <input type="hidden" name="time">
-                                    </div>
-                                    <hr class="mb-25">
-                                    <h6>Vé:</h6>
-                                    <ul class="tickets clearfix">
-                                        <li>
-                                            Trẻ em 5 => 11 tuổi <span class="price">{{ number_format($tourDetail->pricechild, 0, ',', '.') }} VND</span>
-                                            
-                                        </li>
-                                        <li>
-                                            Người lớn <span class="price">{{ number_format($tourDetail->priceadult, 0, ',', '.') }} VND</span>
-                                           
-                                        </li>
-                                    </ul>
-                                    @php
-                                        // Kiểm tra 3 điều kiện: Quá hạn, Hết chỗ, Tạm đóng
-                                        $isPast = \Carbon\Carbon::parse($tourDetail->startdate)->endOfDay()->isPast();
-                                        $isFull = $tourDetail->quantity <= 0;
-                                        $isClosed = $tourDetail->availability == 0;
-                                    @endphp
-                                    
-                                    @if($isPast || $isFull || $isClosed)
-                                        <div class="alert alert-warning mt-15 mb-15 p-2 text-center" style="font-size: 14px; border-radius: 5px;">
-                                            @if($isPast)
-                                                <b class="text-danger"><i class="fas fa-clock"></i> Tour đã khởi hành</b><br>
-                                                Vui lòng liên hệ để biết lịch trình mới.
-                                            @elseif($isFull)
-                                                <b class="text-danger"><i class="fas fa-users-slash"></i> Đã hết chỗ</b><br>
-                                                Tour này đã nhận đủ số lượng khách.
-                                            @else
-                                                <b class="text-danger"><i class="fas fa-ban"></i> Đang tạm ngưng</b><br>
-                                                Tour tạm thời không nhận thêm khách.
-                                            @endif
-                                        </div>
-
-                                        <a href="tel:0352789556" class="theme-btn w-100 mt-10 mb-5 text-center" style="background: #6c757d; color: white;">
-                                            <i class="fas fa-phone-alt"></i> Liên hệ tư vấn
-                                        </a>
-                                    @else
-                                        @if(session()->has('userid'))
-                                            <a href="{{ route('booking.index', ['id' => $tourDetail->tourid]) }}" class="theme-btn style-two w-100 mt-15 mb-5 text-center">
-                                                Đặt ngay
-                                            </a>
+                        <h3>Clients Reviews</h3>
+                        <div class="clients-reviews bgc-black mt-30 mb-60">
+                            <div class="left">
+                                <b>{{ $averageRating }}</b>
+                                <span>({{ $totalReviews }} reviews)</span>
+                                <div class="ratting">
+                                    @for($i = 1; $i <= 5; $i++)
+                                        @if($i <= round($averageRating))
+                                            <i class="fas fa-star"></i>
                                         @else
-                                            <button type="button" onclick="showLoginNotification()" class="theme-btn style-two w-100 mt-15 mb-5 text-center">
-                                                Đặt ngay
-                                            </button>
+                                            <i class="far fa-star"></i>
                                         @endif
-                                    @endif <div class="text-center mt-10">
-                                        <a href="{{ route('contact') }}">Bạn cần hỗ trợ?</a>
-                                    </div>
-                                </form>
+                                    @endfor
+                                </div>
                             </div>
                             
-                            <div class="widget widget-contact" data-aos="fade-up" data-aos-duration="1500" data-aos-offset="50">
-                                <h5 class="widget-title">Cần trợ giúp?</h5>
-                                <ul class="list-style-one">
-                                    <li><i class="far fa-envelope"></i> <a href="mailto:Goviet@gmail.com">Goviet@gmail.com</a></li>
-                                    <li><i class="far fa-phone-volume"></i> <a href="callto:+0352789556">+84 352 789 556</a></li>
+                            <div class="right">
+                                @for($i = 5; $i >= 1; $i--)
+                                <div class="ratting-item">
+                                    <span class="title">{{ $i }} Sao</span>
+                                    
+                                    <span class="line"><span style="width: {{ $ratingPercentages[$i] ?? 0 }}%;"></span></span>
+                                    
+                                    <div class="ratting text-white" style="font-size: 14px; margin-left: 10px;">
+                                        ({{ $ratingCounts[$i] ?? 0 }})
+                                    </div>
+                                </div>
+                                @endfor
+                            </div>
+                        </div>
+                        <h3>Clients Comments ({{ $totalReviews }})</h3>
+                        <div class="comments mt-30 mb-60">
+                            
+                            @forelse($reviews as $review)
+                                <div class="comment-body" data-aos="fade-up" data-aos-duration="1500" data-aos-offset="50">
+                        <div class="author-thumb">
+                            <img src="{{ isset($review->user->avatar) && $review->user->avatar ? asset('clients/assets/images/avatars/' . $review->user->avatar) : asset('clients/assets/images/avatars/default.png') }}" alt="Author">
+                        </div>
+                                    <div class="content">
+                                        <h6>{{ $review->user->name ?? $review->user->username ?? 'Khách hàng' }}</h6>
+                                        
+                                        <div class="ratting">
+                                            @for($i = 1; $i <= 5; $i++)
+                                                @if($i <= $review->rating)
+                                                    <i class="fas fa-star"></i>
+                                                @else
+                                                    <i class="far fa-star"></i>
+                                                @endif
+                                            @endfor
+                                        </div>
+                                        
+                                        <span class="time">{{ \Carbon\Carbon::parse($review->createdat)->format('d/m/Y H:i') }}</span>
+                                        
+                                        <p>{{ $review->comment }}</p>
+                                        @if(!empty($review->admin_reply))
+                            <div class="admin-reply-box mt-10 p-3" style="background-color: #f8f9fa; border-left: 3px solid #ff6a00; border-radius: 5px;">
+                                <h6 style="color: #ff6a00; font-size: 14px; margin-bottom: 5px;"><i class="fas fa-headset"></i> Phản hồi từ quản trị viên:</h6>
+                                <p class="mb-0" style="font-size: 14px;">{{ $review->admin_reply }}</p>
+                            </div>
+                        @endif
+                                        
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="alert alert-info">
+                                    Chưa có đánh giá nào cho tour này. Hãy là người đầu tiên để lại nhận xét!
+                                </div>
+                            @endforelse
+
+                        </div>
+                        
+                        <hr class="mt-50 mb-40">
+
+                        @if(session('success'))
+                            <div class="alert alert-success">{{ session('success') }}</div>
+                        @endif
+                        @if(session('error'))
+                            <div class="alert alert-danger">{{ session('error') }}</div>
+                        @endif
+                        @if ($errors->any())
+                            <div class="alert alert-danger">
+                                <ul class="mb-0">
+                                    @foreach ($errors->all() as $error)
+                                        <li>{{ $error }}</li>
+                                    @endforeach
                                 </ul>
+                            </div>
+                        @endif
+
+                        <h3>Add Reviews</h3>
+
+                        @if(session()->has('userid'))
+                            @if($hasBooked)
+                                <form action="{{ route('review.store') }}" method="post" class="mt-30">
+                                    @csrf
+                                    <input type="hidden" name="tourid" value="{{ $tourDetail->tourid }}">
+                                    
+                                    <div class="comment-review-wrap">
+                                        <div class="comment-ratting-item">
+                                            <span class="title">Đánh giá tour</span>
+                                            <div class="form-group">
+                                                <select name="rating" class="form-control" required>
+                                                    <option value="5">⭐⭐⭐⭐⭐ (5 sao)</option>
+                                                    <option value="4">⭐⭐⭐⭐ (4 sao)</option>
+                                                    <option value="3">⭐⭐⭐ (3 sao)</option>
+                                                    <option value="2">⭐⭐ (2 sao)</option>
+                                                    <option value="1">⭐ (1 sao)</option>
+                                                </select>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <hr class="mt-30 mb-40">
+                                    <h5>Leave Feedback</h5>
+                                    <div class="row gap-20 mt-20">
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Name</label>
+                                                <input type="text" class="form-control" value="{{ session('username') ?? '' }}" disabled>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <div class="form-group">
+                                                <label>Email</label>
+                                                <input type="email" class="form-control" value="{{ session('email') ?? '' }}" disabled>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="form-group">
+                                                <label>Comments</label>
+                                                <textarea name="comment" class="form-control" rows="5" placeholder="Chia sẻ trải nghiệm của bạn về tour này..." required></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="col-md-12">
+                                            <div class="form-group mb-0">
+                                                <button type="submit" class="theme-btn bgc-secondary style-two">
+                                                    <span data-hover="Submit reviews">Submit reviews</span>
+                                                    <i class="fal fa-arrow-right"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
+                            @else
+                                <div class="alert alert-info mt-30">
+                                    <i class="fas fa-info-circle"></i> Bạn cần đặt và trải nghiệm tour này để có thể viết đánh giá.
+                                </div>
+                            @endif
+
+                        @else
+                            <div class="alert alert-warning mt-30">
+                                <i class="fas fa-exclamation-triangle"></i> Vui lòng <a href="{{ route('login') }}" style="text-decoration: underline; font-weight: bold;">đăng nhập</a> để đánh giá tour.
+                            </div>
+                        @endif
+
+                    </div>
+                    
+                    <div class="col-lg-4 col-md-8 col-sm-10 rmt-75">
+                        <div class="blog-sidebar tour-sidebar">
+                            
+                            <div class="widget widget-tour-info mb-40 shadow-sm p-4 rounded bg-white" data-aos="fade-up" data-aos-duration="1500" data-aos-offset="50">
+    <h5 class="widget-title mb-3">Thông tin chung</h5>
+    <ul class="list-unstyled mb-0">
+        @if(!empty($tourDetail->title))
+        <li class="d-flex align-items-center justify-content-between mb-3 border-bottom pb-2 hover-bg p-2 rounded">
+            <div class="d-flex align-items-center">
+                <i class="far fa-clock text-primary me-2 fs-5"></i>
+                <strong>Tên tour:</strong>&nbsp; {{ $tourDetail->title }}
+            </div>
+            <span class="badge bg-success">Hot</span>
+        </li>
+        @endif
+
+        @if(!empty($tourDetail->tourid))
+        <li class="d-flex align-items-center mb-3 border-bottom pb-2 hover-bg p-2 rounded">
+            <i class="far fa-calendar-alt text-primary me-2 fs-5"></i>
+            <strong>Mã tour:</strong> {{ $tourDetail->tourid }}
+        </li>
+        @endif
+
+        @if(!empty($tourDetail->time))
+        <li class="d-flex align-items-center mb-3 border-bottom pb-2 hover-bg p-2 rounded">
+            <i class="far fa-clock text-primary me-2 fs-5"></i>
+            <strong>Thời gian:</strong> {{ $tourDetail->time }}
+        </li>
+        @endif
+
+        @if(!empty($tourDetail->destination))
+        <li class="d-flex align-items-center mb-3 border-bottom pb-2 hover-bg p-2 rounded">
+            <i class="far fa-map-marker-alt text-primary me-2 fs-5"></i>
+            <strong>Điểm đến:</strong> {{ $tourDetail->destination }}
+        </li>
+        @endif
+
+        @if(!empty($tourDetail->quantity))
+        <li class="d-flex align-items-center mb-3 hover-bg p-2 rounded">
+            <i class="far fa-users text-primary me-2 fs-5"></i>
+            <strong>Quy mô tour:</strong> Tối đa {{ $tourDetail->quantity }} khách
+        </li>
+        @endif
+    </ul>
+</div>
+
+<style>
+.hover-bg:hover {
+    background-color: #f8f9fa;
+    transition: 0.3s;
+}
+</style>
+                            
+                            <div class="widget widget-booking" data-aos="fade-up" data-aos-duration="1500" data-aos-offset="50">
+                                <h5 class="widget-title">Đặt Tour</h5>
+                                <form id="booking-form" action="{{ route('booking.index', ['id' => $tourDetail->tourid]) }}" method="get">
+                                    
+                                    <div class="form-group mb-20">
+                                        <label class="fw-bold mb-2"><i class="fas fa-calendar-alt"></i> Chọn lịch khởi hành:</label>
+                                        <select name="schedule_id" id="schedule_id" class="form-control" required style="max-height: 200px; overflow-y: auto; padding: 10px;">
+                                            <option value="" disabled selected>-- Vui lòng chọn ngày --</option>
+                                            @forelse($schedules as $schedule)
+                                                <option value="{{ $schedule->schedule_id }}" 
+                                                        data-price-adult="{{ $schedule->priceadult }}" 
+                                                        data-price-child="{{ $schedule->pricechild }}"
+                                                        data-quantity="{{ $schedule->quantity }}">
+                                                    Khởi hành: {{ date('d/m', strtotime($schedule->startdate)) }} - Về: {{ date('d/m/Y', strtotime($schedule->enddate)) }}
+                                                </option>
+                                            @empty
+                                                <option value="" disabled>Hiện tại đã hết lịch khởi hành</option>
+                                            @endforelse
+                                        </select>
+                                        <small class="text-muted mt-2 d-block"><i class="fas fa-info-circle"></i> Vui lòng chọn ngày để xem giá vé tương ứng.</small>
+                                    </div>
+
+                                    <hr>
+                                    <ul class="tickets clearfix mb-25">
+                                        <li class="d-flex justify-content-between align-items-center mb-2">
+                                            <span class="fw-bold">Giá vé Người lớn:</span> 
+                                            <span class="price text-danger fw-bold fs-5" id="display_price_adult">0 VND</span>
+                                        </li>
+                                        <li class="d-flex justify-content-between align-items-center">
+                                            <span class="fw-bold">Giá vé Trẻ em:</span> 
+                                            <span class="price text-danger fw-bold fs-5" id="display_price_child">0 VND</span>
+                                        </li>
+                                    </ul>
+
+                                    @php
+                                        $nextSchedule = $schedules->where('quantity', '>', 0)->sortBy('startdate')->first();
+                                        $isPast = $nextSchedule && \Carbon\Carbon::parse($nextSchedule->startdate)->endOfDay()->isPast();
+                                        $isFull = !$nextSchedule; 
+                                        $isClosed = $tourDetail->availability == 0;
+                                    @endphp
+
+                                    @if($isPast || $isFull || $isClosed)
+                                        <div class="alert alert-danger text-center py-2" style="font-size: 13px;">
+                                            <i class="fas fa-exclamation-triangle"></i>
+                                            @if($isPast) Tour đã khởi hành @elseif($isFull) Đã hết chỗ @else Đang tạm ngưng @endif
+                                        </div>
+                                        <a href="tel:0352789556" class="theme-btn w-100 style-two bg-secondary text-center">Liên hệ tư vấn</a>
+                                    @else
+                                        @if(session()->has('userid'))
+    <button type="submit" class="theme-btn style-two w-100 text-center">Tiếp tục đặt tour</button>
+@else
+                                            <button type="button" onclick="showLoginNotification()" class="theme-btn style-two w-100 text-center">Tiếp tục đặt tour</button>
+                                        @endif
+                                    @endif
+                                </form>
                             </div>
                         </div>
                     </div>
-                </div>
+                    </div>
             </div>
         </section>
-        <!-- Tour Details Area end -->
-<div id="login-warning" style="
+        <div id="login-warning" style="
 display:none;
 position:fixed;
 top:100px;
@@ -450,18 +467,55 @@ z-index:9999;
 ">
 ⚠ Vui lòng đăng nhập để đặt tour
 </div>
+
 <script>
 function showLoginNotification(){
-
     const box = document.getElementById("login-warning");
-
     box.style.display = "block";
-
     setTimeout(function(){
         box.style.display = "none";
     },5000);
-
 }
+
+document.addEventListener("DOMContentLoaded", function() {
+    const scheduleSelect = document.getElementById("schedule_id");
+    const priceAdultDisplay = document.getElementById("display_price_adult");
+    const priceChildDisplay = document.getElementById("display_price_child");
+
+    function formatMoney(amount) {
+        return new Intl.NumberFormat('vi-VN').format(amount) + ' VND';
+    }
+
+    // Hàm chỉ cập nhật hiển thị giá vé (không tính tổng)
+    function updateBookingSummary() {
+        if (!scheduleSelect.value) return; // Không làm gì nếu chưa chọn ngày
+        
+        const selectedOption = scheduleSelect.options[scheduleSelect.selectedIndex];
+        
+        // Lấy giá từ data attributes của option vừa được chọn
+        const priceAdult = parseInt(selectedOption.getAttribute("data-price-adult")) || 0;
+        const priceChild = parseInt(selectedOption.getAttribute("data-price-child")) || 0;
+        
+        // Cập nhật hiển thị đơn giá
+        priceAdultDisplay.innerText = priceAdult > 0 ? formatMoney(priceAdult) : '0 VND';
+        priceChildDisplay.innerText = priceChild > 0 ? formatMoney(priceChild) : '0 VND';
+    }
+
+    // Lắng nghe sự kiện thay đổi ngày để đổi giá
+    scheduleSelect.addEventListener("change", updateBookingSummary);
+
+    // Xử lý cho thư viện NiceSelect nếu template có dùng
+    if (window.jQuery) {
+        $(scheduleSelect).on('change', function() {
+            updateBookingSummary();
+        });
+    }
+
+    // Nếu lúc load trang mà có sẵn ngày được chọn thì cập nhật giá luôn
+    if(scheduleSelect.value){
+        updateBookingSummary();
+    }
+});
 </script>  
         
 @include('clients.blocks.new_letter')

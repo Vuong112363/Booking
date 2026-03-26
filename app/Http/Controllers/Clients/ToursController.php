@@ -36,55 +36,84 @@ class ToursController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | 2. Tối ưu Code Logic với when()
+        | 2. Tối ưu Code Logic - TÌM KIẾM CHÉO GIỮA TOUR VÀ LỊCH TRÌNH
         |--------------------------------------------------------------------------
         */
         $query = Tours::query()
+            // --- A. TÌM KIẾM Ở BẢNG GỐC (tbl_tours) ---
             ->when($request->filled('destination'), fn($q) => $q->where('destination', 'LIKE', '%' . $request->destination . '%'))
-            ->when($request->filled('start_date'), fn($q) => $q->whereDate('startdate', '>=', $request->start_date))
-            ->when($request->filled('end_date'), fn($q) => $q->whereDate('enddate', '<=', $request->end_date))
-            ->when($request->filled('guests'), fn($q) => $q->where('quantity', '>=', $request->guests))
             ->when($request->filled('filter_destination'), fn($q) => $q->where('destination', $request->filter_destination))
             ->when($request->filled('filter_domain'), fn($q) => $q->where('domain', $request->filter_domain))
+            
+            // --- B. TÌM KIẾM Ở BẢNG LỊCH TRÌNH (tbl_tour_schedules) ---
+            // Yêu cầu: Tour phải có ít nhất 1 lịch trình mở bán và thỏa mãn các điều kiện lọc
+            ->whereExists(function ($subquery) use ($request) {
+                $subquery->select(DB::raw(1))
+                         ->from('tbl_tour_schedules')
+                         ->whereColumn('tbl_tour_schedules.tourid', 'tbl_tours.tourid')
+                         ->whereDate('startdate', '>=', now()); // Chỉ tìm lịch trình chưa xuất phát
+
+                // Lọc theo ngày bắt đầu
+                if ($request->filled('start_date')) {
+                    $subquery->whereDate('startdate', '>=', $request->start_date);
+                }
+
+                // Lọc theo ngày kết thúc
+                if ($request->filled('end_date')) {
+                    $subquery->whereDate('enddate', '<=', $request->end_date);
+                }
+
+                // Lọc theo số chỗ trống (Giao diện gửi lên là 'guests', DB lưu là 'quantity')
+                if ($request->filled('guests')) {
+                    $subquery->where('quantity', '>=', $request->guests);
+                }
+
+                // Lọc theo khoảng thời gian (Số ngày đi)
+                if ($request->filled('filter_duration')) {
+                    $duration = explode('-', $request->filter_duration);
+                    if (count($duration) == 2) {
+                        $subquery->whereRaw('DATEDIFF(enddate, startdate) BETWEEN ? AND ?', [(int)$duration[0], (int)$duration[1]]);
+                    }
+                }
+
+                // Lọc theo khoảng giá tiền
+                if ($request->filled('price')) {
+                    $priceString = preg_replace('/[^0-9\-]/', '', $request->price);
+                    $priceRange = explode('-', $priceString);
+                    if (count($priceRange) == 2) {
+                        $subquery->whereBetween('priceadult', [(float)$priceRange[0], (float)$priceRange[1]]);
+                    }
+                }
+            })
+
+            // --- C. LOGIC SẮP XẾP (SORT BY) ---
             ->when($request->filled('sort_by'), function ($q) use ($request) {
+                // Khai báo câu truy vấn phụ để lấy giá Min
+                $minPriceSubquery = DB::table('tbl_tour_schedules')
+                    ->selectRaw('MIN(priceadult)')
+                    ->whereColumn('tbl_tour_schedules.tourid', 'tbl_tours.tourid')
+                    ->whereDate('startdate', '>=', now());
+
                 switch ($request->sort_by) {
                     case 'new':
-                        // Mới nhất (Sắp xếp theo ID tour giảm dần)
                         $q->orderBy('tourid', 'desc'); 
                         break;
                     case 'old':
-                        // Cũ nhất (Sắp xếp theo ID tour tăng dần)
                         $q->orderBy('tourid', 'asc');
                         break;
                     case 'high-to-low':
-                        // Giá cao đến thấp
-                        $q->orderBy('priceadult', 'desc');
+                        $q->orderByDesc($minPriceSubquery);
                         break;
                     case 'low-to-high':
-                        // Giá thấp đến cao
-                        $q->orderBy('priceadult', 'asc');
+                        $q->orderBy($minPriceSubquery);
                         break;
                     default:
                         $q->orderBy('tourid', 'desc');
                         break;
                 }
             }, function ($q) {
-                // Trạng thái mặc định nếu khách hàng chưa chọn gì (luôn hiện tour mới nhất lên đầu)
+                // Sắp xếp mặc định nếu không chọn gì
                 $q->orderBy('tourid', 'desc');
-            })
-            ->when($request->filled('filter_duration'), function ($q) use ($request) {
-                $duration = explode('-', $request->filter_duration);
-                if (count($duration) == 2) {
-                    $q->whereRaw('DATEDIFF(enddate, startdate) BETWEEN ? AND ?', [(int)$duration[0], (int)$duration[1]]);
-                }
-            })
-            
-            ->when($request->filled('price'), function ($q) use ($request) {
-                $priceString = preg_replace('/[^0-9\-]/', '', $request->price);
-                $priceRange = explode('-', $priceString);
-                if (count($priceRange) == 2) {
-                    $q->whereBetween('priceadult', [(float)$priceRange[0], (float)$priceRange[1]]);
-                }
             });
 
         // Lấy dữ liệu phân trang
@@ -101,6 +130,8 @@ class ToursController extends Controller
 
         /*
         |--------------------------------------------------------------------------
+    /*
+        |--------------------------------------------------------------------------
         | 3. Xóa lỗi N+1 Query: Lấy tất cả ảnh mặc định trong 1 lần truy vấn duy nhất
         |--------------------------------------------------------------------------
         */
@@ -114,14 +145,39 @@ class ToursController extends Controller
                 ->get()
                 ->groupBy('tourid');
 
+            // 3.2 Lấy thông tin Lịch trình (Giá Min & Tổng số chỗ) - CHÍNH LÀ ĐOẠN NÀY ĐÂY
+            $schedulesInfo = DB::table('tbl_tour_schedules')
+                ->whereIn('tourid', $tourIds)
+                ->whereDate('startdate', '>=', now()) // Chỉ lấy các lịch trình chưa xuất phát
+                ->select(
+                    'tourid', 
+                    DB::raw('MIN(priceadult) as min_price'),
+                    DB::raw('SUM(quantity) as total_quantity') // Tính tổng chỗ trống
+                )
+                ->groupBy('tourid')
+                ->get()
+                ->keyBy('tourid'); // Đưa về dạng mảng [tourid => data] để truy xuất nhanh
+
+            // 3.3 Gán dữ liệu vào từng tour
             foreach ($tours as $tour) {
+                // --- Xử lý ảnh ---
                 if (!empty($tour->images)) {
                     $tour->display_image = $tour->images;
                 } else {
-                    // Trích xuất ảnh đầu tiên từ bộ sưu tập ảnh đã lấy về
                     $tourImage = $defaultImages->get($tour->tourid)?->first();
                     $tour->display_image = $tourImage ? $tourImage->imageurl : 'default.jpg';
                 }
+
+                // --- Xử lý Giá Min và Số lượng ---
+                
+                // ĐÂY LÀ DÒNG BẠN BỊ THIẾU KHIẾN LỖI UNDEFINED VARIABLE
+                $schedule = $schedulesInfo->get($tour->tourid);
+                
+                // Gán giá min
+                $tour->min_price = $schedule ? $schedule->min_price : $tour->priceadult;
+                
+                // Gán số lượng chỗ
+                $tour->quantity = $schedule ? $schedule->total_quantity : ($tour->quantity ?? 0);
             }
         }
 

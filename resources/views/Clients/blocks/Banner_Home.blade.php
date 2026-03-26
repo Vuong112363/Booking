@@ -6,8 +6,8 @@
         </h1>
 
         <div class="main-hero-image bgs-cover"
-             style="background-image: url({{ asset('clients/assets/images/hero/hero.jpg') }});">
-        </div>
+     style="background-image: url({{ asset(get_setting('hero_banner', 'clients/assets/images/hero/hero.jpg')) }});">
+</div>
 
     </div>
 

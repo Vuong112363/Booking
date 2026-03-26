@@ -23,6 +23,8 @@
     <link rel="stylesheet" href="{{ asset('clients/assets/css/slick.min.css') }}">
     <link rel="stylesheet" href="{{ asset('clients/assets/css/style.css') }}">
     <link rel="stylesheet" href="{{ asset('clients/assets/css/user-profile.css') }}">
+
+    
     <style>
         .custom-user-dropdown { position: relative; display: inline-block; }
         .custom-user-menu {
@@ -72,7 +74,7 @@
                         <div class="logo-outer">
                             <div class="logo">
                                 <a href="{{ route('home') }}">
-                                    <img src="{{ asset('clients/assets/images/logos/' . ($isHome ? 'logo.png' : 'logo-two.png')) }}" alt="Logo">
+                                    <img src="{{ asset(get_setting('site_logo', 'clients/assets/images/logos/logo.png')) }}" alt="Logo">
                                 </a>
                             </div>
                         </div>
@@ -128,26 +130,36 @@
                             
                             <div class="user-account-area custom-user-dropdown ms-2">
                                 @if(Session::has('user'))
+                                
                                     <a href="#" class="bg-transparent border-0 rounded {{ $isHome ? 'text-white' : 'text-dark' }} text-decoration-none fw-bold p-2">
-                                <img src="{{ asset('clients/assets/images/avatars/' . Session::get('user')->avatar) }}"
-                                    class="user-avatar me-2">
+                                <img src="{{ asset('clients/assets/images/avatars/' . (Session::get('user')->avatar ?? 'Noavatar.png')) }}" class="user-avatar me-2">
+
 
 
                                     </a>
                                     
                                     <ul class="custom-user-menu">
                                         <li><a href="{{ route('infor') }}"><i class="fa-solid fa-address-card me-2"></i>Thông tin tài khoản</a></li>
+                                        <li>
+                                            <a href="{{ route('booking-history') }}">
+                                                <i class="fa-solid fa-clock-rotate-left me-2"></i>Lịch sử đặt tour
+                                            </a>
+                                        </li>
                                         <li><a href="{{ route('logout') }}" class="text-danger"><i class="fa-solid fa-right-from-bracket me-2"></i>Đăng xuất</a></li>
                                     </ul>
+
                                 @else
                                     <a href="{{ route('login') }}" class="bg-transparent border-0 rounded p-2 {{ $isHome ? 'text-white' : 'text-dark' }} text-decoration-none fw-bold">
                                         <i class="fa-solid fa-user fs-5 me-1"></i>
                                         Tài khoản
                                     </a>
                                     
+                                    
                                     <ul class="custom-user-menu">
                                         <li><a href="{{ route('login') }}"><i class="fa-solid fa-right-to-bracket me-2"></i>Đăng nhập</a></li>
                                     </ul>
+                                    
+                                    
                                 @endif
                             </div>
 

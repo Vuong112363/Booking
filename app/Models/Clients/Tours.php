@@ -82,10 +82,14 @@ public function getAllTours()
                 ->where('tourid', $getTourDetail->tourid)
                 ->orderBy('timelineID', 'asc') // Sắp xếp theo ID hoặc ngày cho logic
                 ->get();
+                $getTourDetail->pickupPoints = DB::table('tbl_tour_pickups')
+            ->where('tourid', $getTourDetail->tourid)
+            ->get();
         }
 
         return $getTourDetail;
     }
+    
 public function tourImages()
     {
         // Thêm \App\Models\ phía trước TourImage::class để trỏ về đúng thư mục gốc Models
@@ -105,6 +109,17 @@ public function tourImages()
     {
         return DB::table($this->table)->insertGetId($data); // Trả về ID của tour vừa tạo
     }
+    // Thêm hàm này vào trong class Tours
+    public function schedules()
+    {
+        // Khai báo: 1 Tour có nhiều Lịch trình (Chỉ lấy các ngày chưa khởi hành)
+        return $this->hasMany(TourSchedule::class, 'tourid', 'tourid')
+                    ->whereDate('startdate', '>=', now())
+                    ->orderBy('startdate', 'asc');
+    }
+    public function pickupPoints() {
+    return $this->hasMany(\App\Models\TourPickup::class, 'tourid', 'tourid');
+}
 
     public function searchTours($destination, $start_date, $end_date, $guests)
 {
@@ -149,4 +164,5 @@ public function tourImages()
 
     return $allTours;
 }
+
 }

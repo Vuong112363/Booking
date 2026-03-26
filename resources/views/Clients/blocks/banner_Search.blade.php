@@ -1,6 +1,7 @@
 <!-- Banner  -->
 
-<section class="page-banner-area pt-50 pb-35 rel z-1 bgs-cover" style="background-image: url({{ asset('clients/assets/images/logos/image.png') }});">
+<section class="page-banner-area pt-50 pb-35 rel z-1 bgs-cover" 
+         style="background-image: url('{{ asset(get_setting('hero_banner', 'clients/assets/images/logos/image.png')) }}');">
     <div class="container">
         <div class="banner-inner text-white mb-50">
             <h2 class="page-title mb-10" data-aos="fade-left" data-aos-duration="1500" data-aos-offset="50">Điểm Đến</h2>

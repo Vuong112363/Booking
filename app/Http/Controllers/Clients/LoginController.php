@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Mail;
+
 class LoginController extends Controller
 {
     private $users;
@@ -24,11 +25,17 @@ class LoginController extends Controller
     =============================
     */
 
-    public function index()
+public function index()
     {
+        // 1. KIỂM TRA NGAY LÚC TRUY CẬP TRANG
+        if (Session::has('userid')) {
+            // Nếu có session (đã đăng nhập) -> Đá về trang chủ ngay lập tức
+            return redirect('/')->with('error', 'Bạn đã đăng nhập rồi, không thể vào lại trang này!');
+        }
+
+        // 2. NẾU CHƯA ĐĂNG NHẬP -> Mới hiển thị View
         return view('Clients.login');
     }
-
 
     /*
     =============================
@@ -94,7 +101,7 @@ class LoginController extends Controller
 
     public function login(Request $request)
     {
-
+        
         $request->validate([
 
             'email' => 'required|email',
@@ -123,12 +130,11 @@ class LoginController extends Controller
         {
             return back()->with('error','Sai mật khẩu');
         }
+        if($user->status != 1){
+                return back()->with('error','Tài khoản đã bị khóa');
+            }
 
 
-        if($user->status != 1)
-        {
-            return back()->with('error','Tài khoản đã bị khóa');
-        }
 
 
         Session::put('userid',$user->userid);
@@ -162,6 +168,7 @@ class LoginController extends Controller
 
 public function logout()
 {
+    Session::forget('bot_has_greeted'); // Xóa riêng cờ lời chào
     Session::flush();
 
     return redirect('/')->with('success','Đã đăng xuất');

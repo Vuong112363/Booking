@@ -16,6 +16,7 @@
         @csrf
         
         <div class="card-body">
+            {{-- 0. Hiển thị lỗi Validation --}}
             @if ($errors->any())
                 <div class="alert alert-danger">
                     <ul class="mb-0">
@@ -27,6 +28,7 @@
             @endif
 
             <div class="row">
+                {{-- CỘT TRÁI: THÔNG TIN CƠ BẢN --}}
                 <div class="col-md-7">
                     <div class="form-group">
                         <label>Tên Tour (*)</label>
@@ -58,29 +60,53 @@
                     </div>
                 </div>
 
+                {{-- CỘT PHẢI: HÌNH ẢNH & ĐIỂM ĐÓN --}}
                 <div class="col-md-5">
-                    <div class="card card-outline card-info">
+                    {{-- 1. Card Hình ảnh --}}
+                    <div class="card card-outline card-info shadow-none border mb-3">
                         <div class="card-header">
-                            <h3 class="card-title text-bold"><i class="fas fa-images"></i> Tải lên hình ảnh</h3>
+                            <h3 class="card-title text-bold small"><i class="fas fa-images"></i> Tải lên hình ảnh</h3>
                         </div>
                         <div class="card-body">
                             <div class="form-group mb-4">
-                                <label class="text-danger">1. Ảnh chính (Thumbnail) (*)</label>
+                                <label class="text-danger small">1. Ảnh chính (Thumbnail) (*)</label>
                                 <input type="file" name="image_main" id="main-image-input" class="form-control-file" accept="image/*" required>
-                                <small class="text-muted">Bắt buộc phải có 1 ảnh làm đại diện Tour.</small>
-                                
                                 <div id="main-image-preview" class="mt-2" style="display: none;">
-                                    <img src="" class="img-thumbnail border-danger" style="height: 100px; object-fit: cover;">
+                                    <img src="" class="img-thumbnail border-danger" style="height: 120px; width: 100%; object-fit: cover; border-radius: 8px;">
                                 </div>
                             </div>
 
                             <div class="form-group border-top pt-3">
-                                <label class="text-info">2. Ảnh chi tiết (Gallery)</label>
+                                <label class="text-info small">2. Ảnh chi tiết (Gallery)</label>
                                 <input type="file" name="image_gallery[]" id="gallery-image-input" class="form-control-file" accept="image/*" multiple>
-                                <small class="text-muted">Chọn tối đa 5 ảnh. Giữ phím Ctrl (hoặc Cmd) để chọn nhiều ảnh cùng lúc.</small>
-                                
                                 <div id="gallery-image-preview" class="d-flex flex-wrap mt-2 gap-2"></div>
                             </div>
+                        </div>
+                    </div>
+
+                    {{-- 2. Card Điểm đón (Nâng cấp từ trang Edit) --}}
+                    <div class="card card-outline card-success shadow-none border">
+                        <div class="card-header p-2">
+                            <h3 class="card-title text-bold small mt-1"><i class="fas fa-bus mr-1"></i> Điểm đón & Phụ phí</h3>
+                            <button type="button" class="btn btn-success btn-xs float-right" onclick="addPickupRow()">
+                                <i class="fas fa-plus"></i> Thêm điểm đón
+                            </button>
+                        </div>
+                        <div class="card-body p-0">
+                            <table class="table table-sm table-bordered mb-0">
+                                <thead>
+                                    <tr class="bg-light small text-center">
+                                        <th>Tên điểm đón</th>
+                                        <th width="75">Giờ</th>
+                                        <th width="80">Phí</th>
+                                        <th width="105">Cách tính</th>
+                                        <th width="30"></th>
+                                    </tr>
+                                </thead>
+                                <tbody id="pickup-container">
+                                    {{-- Rows sẽ được thêm qua JavaScript --}}
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
@@ -88,6 +114,7 @@
 
             <hr>
 
+            {{-- 3. THÔNG TIN GIÁ & THỜI GIAN --}}
             <div class="row">
                 <div class="col-md-3">
                     <div class="form-group">
@@ -104,7 +131,7 @@
                 <div class="col-md-3">
                     <div class="form-group">
                         <label>Giá người lớn (VNĐ) (*)</label>
-                        <input type="number" name="priceadult" class="form-control" required value="{{ old('priceadult') }}">
+                        <input type="number" name="priceadult" class="form-control" placeholder="Nhập giá cơ bản..." required value="{{ old('priceadult') }}">
                     </div>
                 </div>
                 <div class="col-md-3">
@@ -118,7 +145,7 @@
             <div class="row">
                 <div class="col-md-2">
                     <div class="form-group">
-                        <label>Số chỗ</label>
+                        <label>Số chỗ (Đợt đầu)</label>
                         <input type="number" name="quantity" class="form-control" value="{{ old('quantity', 20) }}">
                     </div>
                 </div>
@@ -133,13 +160,13 @@
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        <label>Ngày đi</label>
-                        <input type="date" name="startdate" class="form-control" value="{{ old('startdate') }}">
+                        <label>Ngày khởi hành đợt 1</label>
+                        <input type="date" name="startdate" class="form-control" value="{{ old('startdate') }}" min="{{ date('Y-m-d') }}">
                     </div>
                 </div>
                 <div class="col-md-4">
                     <div class="form-group">
-                        <label>Ngày về</label>
+                        <label>Ngày về đợt 1</label>
                         <input type="date" name="enddate" class="form-control" value="{{ old('enddate') }}">
                     </div>
                 </div>
@@ -147,16 +174,16 @@
 
             <hr>
 
+            {{-- 4. LỊCH TRÌNH CHI TIẾT (Timeline) --}}
             <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
-                <h4 class="text-info m-0"><i class="fas fa-calendar-alt"></i> Lịch trình chi tiết</h4>
+                <h4 class="text-info m-0 font-weight-bold"><i class="fas fa-calendar-alt mr-2"></i>Lịch trình chi tiết theo ngày</h4>
                 <button type="button" class="btn btn-sm btn-success shadow-sm" onclick="addTimeline()">
                     <i class="fas fa-plus"></i> Thêm ngày mới
                 </button>
             </div>
             
             <div class="accordion" id="timeline-wrapper">
-                {{-- Khung trống mặc định cho Ngày 1 khi thêm mới --}}
-                <div class="card card-outline card-secondary mb-2 timeline-item">
+                <div class="card card-outline card-secondary mb-2 timeline-item shadow-none border">
                     <div class="card-header p-2" id="heading-0">
                         <div class="d-flex justify-content-between align-items-center">
                             <button class="btn btn-link text-left text-dark font-weight-bold flex-grow-1 text-decoration-none" type="button" data-toggle="collapse" data-target="#collapse-0" aria-expanded="true">
@@ -176,7 +203,6 @@
                                 <label>Tiêu đề ngày</label>
                                 <input type="text" name="timeline_title[]" class="form-control title-input" placeholder="Ví dụ: Hà Nội → Hạ Long" onkeyup="updatePreviewTitle(this)">
                             </div>
-                            
                             <div class="form-group mb-0">
                                 <label>Mô tả chi tiết ngày</label>
                                 <textarea name="timeline_description[]" class="form-control" rows="4"></textarea>
@@ -185,12 +211,11 @@
                     </div>
                 </div>
             </div>
-
         </div>
 
-        <div class="card-footer text-right bg-white">
-            <a href="{{ route('admin.tours.index') }}" class="btn btn-default btn-lg mr-2">Hủy bỏ</a>
-            <button type="submit" class="btn btn-primary btn-lg shadow"><i class="fas fa-save"></i> LƯU TOUR MỚI</button>
+        <div class="card-footer text-right bg-white border-top">
+            <a href="{{ route('admin.tours.index') }}" class="btn btn-default btn-lg mr-2 border">Hủy bỏ</a>
+            <button type="submit" class="btn btn-primary btn-lg shadow px-5"><i class="fas fa-save mr-1"></i> LƯU TOUR MỚI</button>
         </div>
     </form>
 </div>
@@ -208,16 +233,22 @@
         .accordion .card-header button[aria-expanded="false"] i.fa-angle-down {
             transition: transform 0.3s;
         }
+        /* CSS cho bảng điểm đón thu nhỏ */
+        #pickup-container input, #pickup-container select { 
+            font-size: 13px; 
+            padding: 2px 5px;
+            height: 30px;
+        }
     </style>
 @stop
 
 @section('js')
     <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
     <script>
-        // 1. Khởi tạo CKEditor
+        // 1. CKEditor
         ClassicEditor.create(document.querySelector('#editor')).catch(error => { console.error(error); });
 
-        // 2. Preview Ảnh Chính
+        // 2. Preview Ảnh Chính (thumbnail)
         const mainInput = document.getElementById('main-image-input');
         const mainPreview = document.getElementById('main-image-preview');
 
@@ -235,60 +266,50 @@
             }
         });
 
-        // 3. Preview Ảnh Gallery
+        // 3. Preview Gallery
         const galleryInput = document.getElementById('gallery-image-input');
         const galleryPreview = document.getElementById('gallery-image-preview');
 
         galleryInput.addEventListener('change', function(e) {
-            galleryPreview.innerHTML = ''; // Xóa preview cũ
+            galleryPreview.innerHTML = ''; 
             const files = Array.from(e.target.files);
-            
-            if (files.length > 5) {
-                alert("Bạn chỉ được chọn tối đa 5 ảnh chi tiết. Các ảnh thừa sẽ bị bỏ qua.");
-            }
+            if (files.length > 5) alert("Bạn chỉ nên chọn tối đa 5 ảnh chi tiết.");
 
-            const limitFiles = files.slice(0, 5); 
-
-            limitFiles.forEach(file => {
+            files.slice(0, 5).forEach(file => {
                 const reader = new FileReader();
                 reader.onload = function(event) {
                     const imgBox = document.createElement('div');
                     imgBox.className = 'mr-2 mb-2';
-                    imgBox.innerHTML = `<span class="badge badge-success d-block mb-1">Mới</span><img src="${event.target.result}" class="img-thumbnail border-info" style="height: 60px; width: 60px; object-fit: cover; border-radius: 5px;">`;
+                    imgBox.innerHTML = `<img src="${event.target.result}" class="img-thumbnail" style="height: 60px; width: 60px; object-fit: cover; border-radius: 5px;">`;
                     galleryPreview.appendChild(imgBox);
                 }
                 reader.readAsDataURL(file);
             });
         });
 
-        // 4. THÊM LỊCH TRÌNH MỚI (ACCORDION)
+        // 4. Lịch trình động (Timeline)
         function addTimeline() {
             const wrapper = document.getElementById('timeline-wrapper');
             const count = wrapper.querySelectorAll('.timeline-item').length + 1;
             const uniqueId = Date.now(); 
 
             const html = `
-            <div class="card card-outline card-secondary mb-2 timeline-item">
+            <div class="card card-outline card-secondary mb-2 timeline-item border shadow-none">
                 <div class="card-header p-2" id="heading-${uniqueId}">
                     <div class="d-flex justify-content-between align-items-center">
                         <button class="btn btn-link text-left text-dark font-weight-bold flex-grow-1 text-decoration-none" type="button" data-toggle="collapse" data-target="#collapse-${uniqueId}" aria-expanded="true">
-                            <i class="fas fa-angle-down mr-2 text-muted"></i> 
-                            Ngày <span class="day-number">${count}</span>: 
+                            <i class="fas fa-angle-down mr-2 text-muted"></i> Ngày <span class="day-number">${count}</span>: 
                             <span class="preview-title text-primary">Tiêu đề mới...</span>
                         </button>
-                        <button type="button" class="btn btn-sm btn-outline-danger border-0" onclick="removeTimeline(this)" title="Xóa ngày này">
-                            <i class="fas fa-trash"></i>
-                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger border-0" onclick="removeTimeline(this)"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>
-
                 <div id="collapse-${uniqueId}" class="collapse show" data-parent="#timeline-wrapper">
                     <div class="card-body bg-light">
                         <div class="form-group">
                             <label>Tiêu đề ngày</label>
-                            <input type="text" name="timeline_title[]" class="form-control title-input" placeholder="Ví dụ: Hà Nội → Hạ Long" onkeyup="updatePreviewTitle(this)" required>
+                            <input type="text" name="timeline_title[]" class="form-control title-input" onkeyup="updatePreviewTitle(this)" required>
                         </div>
-                        
                         <div class="form-group mb-0">
                             <label>Mô tả chi tiết</label>
                             <textarea name="timeline_description[]" class="form-control" rows="4"></textarea>
@@ -296,31 +317,48 @@
                     </div>
                 </div>
             </div>`;
-            
             wrapper.insertAdjacentHTML('beforeend', html);
             reindexDays(); 
         }
 
-        // 5. XÓA LỊCH TRÌNH
         function removeTimeline(btn) {
-            if(confirm('Bạn có chắc chắn muốn xóa ngày này khỏi lịch trình?')) {
+            if(confirm('Xác nhận xóa ngày này khỏi lịch trình?')) {
                 btn.closest('.timeline-item').remove();
                 reindexDays(); 
             }
         }
 
-        // 6. CẬP NHẬT PREVIEW TITLE
         function updatePreviewTitle(input) {
             const previewSpan = input.closest('.timeline-item').querySelector('.preview-title');
             previewSpan.textContent = input.value ? input.value : 'Đang cập nhật...';
         }
 
-        // 7. ĐÁNH SỐ THỨ TỰ LẠI
         function reindexDays() {
-            const items = document.querySelectorAll('.timeline-item');
-            items.forEach((item, index) => {
+            document.querySelectorAll('.timeline-item').forEach((item, index) => {
                 item.querySelector('.day-number').textContent = index + 1;
             });
+        }
+
+        // 5. Thêm Điểm đón (Logic đầy đủ giống Edit)
+        function addPickupRow() {
+            const html = `
+            <tr>
+                <td><input type="text" name="pk_name[]" class="form-control" placeholder="Địa điểm..." required></td>
+                <td><input type="time" name="pk_time[]" class="form-control" required></td>
+                <td><input type="number" name="pk_price[]" class="form-control" value="0"></td>
+                <td>
+                    <select name="pk_type[]" class="form-control">
+                        <option value="0">Mỗi khách</option>
+                        <option value="1">Cả đoàn</option>
+                    </select>
+                </td>
+                <td class="text-center">
+                    <button type="button" class="btn btn-link text-danger p-0" onclick="$(this).closest('tr').remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </td>
+            </tr>`;
+            document.getElementById('pickup-container').insertAdjacentHTML('beforeend', html);
         }
     </script>
 @stop

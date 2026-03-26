@@ -1,4 +1,4 @@
-<div class="col-lg-3 col-md-6 col-sm-10 rmb-75">
+<div class="sidebar-wrapper rmb-75">
     <form method="GET" action="{{ route('Tours') }}" id="filterForm">
         
         @if(request('destination')) <input type="hidden" name="destination" value="{{ request('destination') }}"> @endif
@@ -33,7 +33,8 @@
                     </li>
                 </ul>
             </div>
-<div class="widget widget-activity" data-aos="fade-up" data-aos-duration="1500" data-aos-offset="50">
+
+            <div class="widget widget-activity" data-aos="fade-up" data-aos-duration="1500" data-aos-offset="50">
                 <h6 class="widget-title">Vùng Miền</h6>
                 <ul class="radio-filter">
                     <li>
@@ -70,7 +71,7 @@
                             </span>
                         </label>
                     </li>
-                    </ul>
+                </ul>
             </div>
             
             <div class="widget widget-languages" data-aos="fade-up" data-aos-duration="1500" data-aos-offset="50">

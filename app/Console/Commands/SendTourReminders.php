@@ -10,26 +10,35 @@ use Carbon\Carbon;
 
 class SendTourReminders extends Command
 {
-    // Tên lệnh dùng để gọi trong Terminal
     protected $signature = 'mail:send-tour-reminders';
-
-    // Mô tả lệnh
-    protected $description = 'Quét cơ sở dữ liệu và gửi email nhắc nhở khách hàng trước ngày khởi hành 2 ngày';
+    protected $description = 'Gửi email nhắc nhở khách hàng trước ngày khởi hành 2 ngày';
 
     public function handle()
     {
-        // 1. Tính toán ra "Ngày mốt" (sau hôm nay 2 ngày)
-        $targetDate = Carbon::now()->addDays(2)->format('Y-m-d');
+        // 1. Lấy ngày mục tiêu (sau đây 2 ngày)
+        $targetDate = Carbon::now()->addDays(2)->toDateString();
         
-        $this->info("Đang quét các tour khởi hành vào ngày: {$targetDate}...");
+        // 2. Lấy thông tin Settings để truyền vào footer email
+        $settings = DB::table('settings')->pluck('value', 'key');
 
-        // 2. Tìm tất cả đơn hàng đã duyệt (confirmed) và có ngày đi khớp với $targetDate
+        // 3. Truy vấn đơn hàng: Kết nối Lịch trình và Điểm đón
         $upcomingBookings = DB::table('tbl_bookings')
+            ->join('tbl_tour_schedules', 'tbl_bookings.schedule_id', '=', 'tbl_tour_schedules.schedule_id')
             ->join('tbl_tours', 'tbl_bookings.tourid', '=', 'tbl_tours.tourid')
             ->join('tbl_users', 'tbl_bookings.userid', '=', 'tbl_users.userid')
-            ->where('tbl_tours.startdate', $targetDate)
+            ->leftJoin('tbl_tour_pickups', 'tbl_bookings.pickup_id', '=', 'tbl_tour_pickups.pickup_id') // Lấy điểm đón
+            ->where('tbl_tour_schedules.startdate', $targetDate)
             ->where('tbl_bookings.bookingstatus', 'confirmed')
-            ->select('tbl_bookings.*', 'tbl_tours.title', 'tbl_tours.startdate', 'tbl_users.email', 'tbl_users.username')
+            ->select(
+                'tbl_bookings.*', 
+                'tbl_tours.title', 
+                'tbl_tour_schedules.startdate', 
+                'tbl_tour_schedules.enddate',
+                'tbl_users.email', 
+                'tbl_users.username',
+                'tbl_tour_pickups.pickup_name',
+                'tbl_tour_pickups.pickup_time'
+            )
             ->get();
 
         if ($upcomingBookings->isEmpty()) {
@@ -37,20 +46,16 @@ class SendTourReminders extends Command
             return;
         }
 
-        $count = 0;
-        // 3. Vòng lặp gửi email cho từng khách hàng
         foreach ($upcomingBookings as $booking) {
-            if (!empty($booking->email)) {
-                try {
-                    Mail::to($booking->email)->send(new TourReminderMail($booking));
-                    $this->info("Đã gửi mail nhắc nhở cho: " . $booking->email);
-                    $count++;
-                } catch (\Exception $e) {
-                    $this->error("Lỗi gửi mail cho {$booking->email}: " . $e->getMessage());
-                }
+            try {
+                // Gửi mail và truyền kèm cả biến settings
+                Mail::to($booking->email)->send(new TourReminderMail($booking, $settings));
+                $this->info("Đã gửi nhắc nhở cho: " . $booking->email);
+            } catch (\Exception $e) {
+                $this->error("Lỗi gửi mail: " . $e->getMessage());
             }
         }
 
-        $this->info("Hoàn tất! Đã gửi thành công {$count} email nhắc nhở.");
+        $this->info("Hoàn tất gửi nhắc nhở!");
     }
 }

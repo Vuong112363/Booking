@@ -67,7 +67,7 @@
             <div class="header-inner rel d-flex align-items-center">
                 <div class="logo-outer">
                     <div class="logo">
-                        <a href="{{ route('home') }}"><img src="{{ asset('clients/assets/images/logos/logo.png') }}" alt="Logo" title="Logo"></a>
+                        <img src="{{ asset(get_setting('site_logo', 'clients/assets/images/logos/logo.png')) }}" alt="Logo">
                     </div>
                 </div>
 
@@ -123,14 +123,19 @@
 
                         @if(Session::has('user'))
                             <a href="#" class="bg-transparent border-0 rounded text-white text-decoration-none fw-bold p-2">
-                                <img src="{{ asset('clients/assets/images/avatars/' . Session::get('user')->avatar) }}" class="user-avatar me-2">
-                            </a>
+                                
+                                <img src="{{ asset('clients/assets/images/avatars/' . (Session::get('user')->avatar ?? 'Noavatar.png')) }}" class="user-avatar me-2">
 
                             <ul class="custom-user-menu">
                                 <li>
                                     <a href="{{ route('infor') }}">
                                         <i class="fa-solid fa-address-card me-2"></i>
                                         Thông tin tài khoản
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('booking-history') }}">
+                                        <i class="fa-solid fa-clock-rotate-left me-2"></i>Lịch sử đặt tour
                                     </a>
                                 </li>
 

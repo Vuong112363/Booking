@@ -5,16 +5,19 @@ namespace App\Mail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use App\Models\Admin\Setting;
 
 class TourReminderMail extends Mailable
 {
     use Queueable, SerializesModels;
 
     public $bookingDetail;
+    public $settings;
 
-    public function __construct($bookingDetail)
+    public function __construct($bookingDetail, $settings)
     {
         $this->bookingDetail = $bookingDetail;
+    $this->settings = $settings;
     }
 
     public function build()

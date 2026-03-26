@@ -6,261 +6,274 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\DB;
-// Gọi Model Tours từ thư mục Clients và gán bí danh là Tour để code ngắn gọn
 use App\Models\Clients\Tours as Tour; 
 use App\Models\TourImage;
 use App\Models\Booking;
+use App\Models\Admin\TourSchedule;
 
 class TourController extends Controller
 {
+    // Cấu hình đường dẫn ảnh để dễ quản lý và thay đổi sau này
+    private $imagePath = 'clients/assets/images/gallery-tours';
+
     // ==========================================
-    // 1. HIỂN THỊ DANH SÁCH & TÌM KIẾM
+    // 1. HIỂN THỊ DANH SÁCH (Tối ưu truy vấn)
     // ==========================================
     public function index(Request $request)
     {
         $query = Tour::query();
 
-        // Tìm kiếm theo ID, Tên, hoặc Điểm đến
+        // Tìm kiếm thông minh
         if ($request->filled('keyword')) {
             $keyword = $request->keyword;
             $query->where(function($q) use ($keyword) {
                 if (is_numeric($keyword)) {
                     $q->where('tourid', $keyword);
                 }
-                $q->orWhere('title', 'like', '%' . $keyword . '%')
-                  ->orWhere('destination', 'like', '%' . $keyword . '%');
+                $q->orWhere('title', 'like', "%$keyword%")
+                  ->orWhere('destination', 'like', "%$keyword%");
             });
         }
 
-        // Lọc theo vùng miền
         if ($request->filled('domain')) {
             $query->where('domain', $request->domain);
         }
 
-        $tours = $query->orderBy('tourid', 'desc')->paginate(10);
+        // Load kèm số lượng lịch trình và ảnh gallery để hiển thị nhanh
+        $tours = $query->withCount('schedules')
+                       ->orderBy('tourid', 'desc')
+                       ->paginate(10);
+
         return view('admin.tours.index', compact('tours'));
     }
 
-    // ==========================================
-    // 2. FORM THÊM MỚI
-    // ==========================================
     public function create()
     {
         return view('admin.tours.create');
     }
 
     // ==========================================
-    // 3. XỬ LÝ LƯU TOUR MỚI VÀ ẢNH
+    // 2. LƯU TOUR MỚI (Đã tích hợp Điểm đón & Transaction)
     // ==========================================
     public function store(Request $request)
     {
         $request->validate([
-            'title' => 'required|max:255',
-            'priceadult' => 'required|numeric',
-            'domain' => 'required|in:b,t,n',
+            'title'      => 'required|max:255',
+            'domain'     => 'required|in:b,t,n',
             'image_main' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'image_gallery' => 'array|max:5',
-            'image_gallery.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048'
         ]);
 
-        $tour = new Tour();
-        $tour->title = $request->title;
-        $tour->duration = $request->duration;
-        $tour->destination = $request->destination;
-        $tour->domain = $request->domain;
-        $tour->startdate = $request->startdate;
-        $tour->enddate = $request->enddate;
-        $tour->priceadult = $request->priceadult;
-        $tour->pricechild = $request->pricechild ?? 0;
-        $tour->quantity = $request->quantity ?? 0;
-        $tour->availability = $request->availability;
-        $tour->description = $request->description;
-        $tour->time = $request->time;
+        DB::beginTransaction();
+        try {
+            $tour = new Tour();
+            $this->saveTourData($tour, $request); // Gán dữ liệu cơ bản
 
-        // Xử lý Ảnh chính (Thumbnail)
-        if ($request->hasFile('image_main')) {
-            $file = $request->file('image_main');
-            $filename = time() . '_main_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            $file->move(public_path('clients/assets/images/gallery-tours'), $filename);
-            $tour->images = $filename;
-        }
-
-        // PHẢI LƯU TOUR TRƯỚC ĐỂ CÓ ID
-        $tour->save();
-        if ($request->has('timeline_title')) {
-    foreach ($request->timeline_title as $key => $title) {
-        if (!empty($title)) { // Tránh lưu các ngày bị bỏ trống
-            DB::table('tbl_timeline')->insert([
-                'tourid'      => $tour->tourid,
-                'title'       => $title,
-                'description' => $request->timeline_description[$key] ?? ''
-            ]);
-        }
-    }
-}
-
-        // Xử lý Ảnh Gallery
-        if ($request->hasFile('image_gallery')) {
-            foreach ($request->file('image_gallery') as $galleryFile) {
-                $galleryName = time() . '_gallery_' . uniqid() . '.' . $galleryFile->getClientOriginalExtension();
-                $galleryFile->move(public_path('clients/assets/images/gallery-tours'), $galleryName);
-
-                TourImage::insert([
-                    'tourid' => $tour->tourid,
-                    'imageurl' => $galleryName,
-                    'description' => 'Ảnh chi tiết ' . $tour->title,
-                    'uploadDate' => now()
-                ]);
+            // Xử lý ảnh chính
+            if ($request->hasFile('image_main')) {
+                $tour->images = $this->uploadFile($request->file('image_main'), 'main');
             }
-        }
+            $tour->save();
 
-        return redirect()->route('admin.tours.index')->with('success', 'Đã thêm Tour mới và tải ảnh thành công!');
+            // Xử lý các bảng phụ qua Helper
+            $this->handleTimeline($tour->tourid, $request);
+            $this->handleGallery($tour->tourid, $request);
+            $this->handlePickups($tour->tourid, $request);
+            $this->handleInitialSchedule($tour->tourid, $request);
+
+            DB::commit();
+            return redirect()->route('admin.tours.index')->with('success', 'Đã tạo Tour mới thành công!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Lỗi hệ thống: ' . $e->getMessage())->withInput();
+        }
     }
 
-    // ==========================================
-    // 4. FORM CHỈNH SỬA
-    // ==========================================
     public function edit($id)
     {
-        // Load Tour kèm theo mảng ảnh Gallery qua relationship 'tourImages'
-        $tour = Tour::with('tourImages')->findOrFail($id);
+        // Load Tour cùng toàn bộ quan hệ cần thiết
+        $tour = Tour::with(['tourImages', 'schedules', 'pickupPoints'])->findOrFail($id);
+        
         $tour->timeline = DB::table('tbl_timeline')
                             ->where('tourid', $id)
-                            ->orderBy('timelineID', 'asc') // Sắp xếp theo thứ tự thêm vào
+                            ->orderBy('timelineID', 'asc')
                             ->get();
+                            
         return view('admin.tours.edit', compact('tour'));
     }
 
     // ==========================================
-    // 5. CẬP NHẬT TOUR VÀ ẢNH
+    // 3. CẬP NHẬT TOUR (Gọn gàng & An toàn)
     // ==========================================
-public function update(Request $request, $id)
+    public function update(Request $request, $id)
     {
         $request->validate([
-            'title' => 'required|max:255',
-            'priceadult' => 'required|numeric',
-            'domain' => 'required|in:b,t,n',
-            'image_main' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'image_gallery' => 'array|max:5',
-            'image_gallery.*' => 'image|mimes:jpeg,png,jpg,gif|max:2048'
+            'title'      => 'required|max:255',
+            'domain'     => 'required|in:b,t,n',
+            'image_main' => 'nullable|image|max:2048',
         ]);
 
-        $tour = Tour::findOrFail($id);
-        
-        // 1. Cập nhật các trường dữ liệu text
-        $tour->title = $request->title;
-        $tour->duration = $request->duration;
-        $tour->destination = $request->destination;
-        $tour->domain = $request->domain;
-        $tour->startdate = $request->startdate;
-        $tour->enddate = $request->enddate;
-        $tour->priceadult = $request->priceadult;
-        $tour->pricechild = $request->pricechild ?? 0;
-        $tour->quantity = $request->quantity ?? 0;
-        $tour->availability = $request->availability;
-        $tour->description = $request->description;
-        $tour->time = $request->time;
+        DB::beginTransaction();
+        try {
+            $tour = Tour::findOrFail($id);
+            $this->saveTourData($tour, $request);
 
-        // 2. Cập nhật Ảnh Chính (CHỈ XỬ LÝ 1 LẦN)
-        if ($request->hasFile('image_main')) {
-            // Xóa ảnh cũ đi
-            if ($tour->images) {
-                $oldImagePath = public_path('clients/assets/images/gallery-tours/' . $tour->images);
-                if (File::exists($oldImagePath)) {
-                    File::delete($oldImagePath);
-                }
+            // Cập nhật ảnh chính (xóa ảnh cũ)
+            if ($request->hasFile('image_main')) {
+                $this->deleteFile($tour->images);
+                $tour->images = $this->uploadFile($request->file('image_main'), 'main');
             }
-            // Lưu ảnh mới
-            $file = $request->file('image_main');
-            $filename = time() . '_main_' . uniqid() . '.' . $file->getClientOriginalExtension();
-            $file->move(public_path('clients/assets/images/gallery-tours'), $filename);
-            $tour->images = $filename;
+            $tour->save();
+
+            // Cập nhật các bảng phụ (Xóa cũ - Thêm mới để đảm bảo tính đồng bộ)
+            $this->handleTimeline($id, $request);
+            $this->handlePickups($id, $request);
+            $this->handleGalleryUpdate($tour->tourid, $request);
+
+            DB::commit();
+            return redirect()->route('admin.tours.index')->with('success', 'Cập nhật Tour thành công!');
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Lỗi cập nhật: ' . $e->getMessage());
         }
+    }
 
-        // Lưu toàn bộ thông tin tour (CHỈ GỌI LỆNH SAVE 1 LẦN Ở ĐÂY)
-        $tour->save();
+    // ==========================================
+    // 4. CÁC HÀM TRỢ GIÚP (PRIVATE HELPERS - NÂNG CẤP)
+    // ==========================================
 
-        // 3. Xử lý Lịch trình (Timeline)
+    private function saveTourData($tour, $request) {
+        $tour->title          = $request->title;
+        $tour->duration       = $request->duration;
+        $tour->destination    = $request->destination;
+        $tour->departure_city = $request->departure_city; // Cột mới thảo luận
+        $tour->domain         = $request->domain;
+        $tour->availability   = $request->availability ?? 1;
+        $tour->description    = $request->description;
+        $tour->time           = $request->time;
+    }
+
+    private function handleTimeline($tourid, $request) {
         if ($request->has('timeline_title')) {
-            // Xóa lịch trình cũ trong DB
-            DB::table('tbl_timeline')->where('tourid', $id)->delete();
-
-            // Thêm lại lịch trình mới
+            DB::table('tbl_timeline')->where('tourid', $tourid)->delete();
             foreach ($request->timeline_title as $key => $title) {
                 if (!empty($title)) {
                     DB::table('tbl_timeline')->insert([
-                        'tourid'      => $tour->tourid,
+                        'tourid'      => $tourid,
                         'title'       => $title,
                         'description' => $request->timeline_description[$key] ?? ''
                     ]);
                 }
             }
         }
+    }
 
-        // 4. XÓA CÁC ẢNH CŨ TRONG GALLERY NẾU NGƯỜI DÙNG BẤM NÚT "X"
-        if ($request->has('delete_images')) {
-            foreach ($request->delete_images as $imageId) {
-                $img = TourImage::find($imageId);
-                if ($img) {
-                    // Xóa file vật lý trong folder
-                    $imagePath = public_path('clients/assets/images/gallery-tours/' . $img->imageurl);
-                    if (File::exists($imagePath)) {
-                        File::delete($imagePath);
-                    }
-                    // Xóa trong database
-                    $img->delete();
+    private function handlePickups($tourid, $request) {
+        // Lưu ý: SQL của bạn dùng 'tour_id' (có dấu gạch dưới)
+        DB::table('tbl_tour_pickups')->where('tourid', $tourid)->delete();
+        if ($request->has('pk_name')) {
+            foreach ($request->pk_name as $key => $name) {
+                if (!empty($name)) {
+                    DB::table('tbl_tour_pickups')->insert([
+                        'tourid'     => $tourid,
+                        'pickup_name' => $name,
+                        'pickup_time' => $request->pk_time[$key],
+                        'extra_price' => $request->pk_price[$key] ?? 0,
+                        'fee_type'    => $request->pk_type[$key] ?? 0,
+                    ]);
                 }
             }
         }
+    }
 
-        // 5. Thêm Ảnh Gallery Mới (Không xóa ảnh cũ, chỉ add thêm)
+    private function handleGalleryUpdate($tourid, $request) {
+        // Xóa ảnh cũ nếu có yêu cầu
+        if ($request->has('delete_images')) {
+            $images = TourImage::whereIn('imageid', $request->delete_images)->get();
+            foreach ($images as $img) {
+                $this->deleteFile($img->imageurl);
+                $img->delete();
+            }
+        }
+        $this->handleGallery($tourid, $request);
+    }
+
+    private function handleGallery($tourid, $request) {
         if ($request->hasFile('image_gallery')) {
-            foreach ($request->file('image_gallery') as $galleryFile) {
-                $galleryName = time() . '_gallery_' . uniqid() . '.' . $galleryFile->getClientOriginalExtension();
-                $galleryFile->move(public_path('clients/assets/images/gallery-tours'), $galleryName);
-
-                TourImage::insert([
-                    'tourid' => $tour->tourid,
-                    'imageurl' => $galleryName,
-                    'description' => 'Ảnh chi tiết ' . $tour->title,
+            foreach ($request->file('image_gallery') as $file) {
+                TourImage::create([
+                    'tourid'     => $tourid,
+                    'imageurl'   => $this->uploadFile($file, 'gallery'),
                     'uploadDate' => now()
                 ]);
             }
         }
-
-        return redirect()->route('admin.tours.index')->with('success', 'Đã cập nhật Tour thành công!');
     }
-    // ==========================================
-    // 6. XÓA TOUR VÀ DỌN DẸP ẢNH TRÊN SERVER
-    // ==========================================
-public function delete($id)
-    {
-        $tour = Tour::with(['tourImages', 'booking'])->findOrFail($id);
 
-        // NẾU CÓ NGƯỜI ĐẶT TOUR RỒI THÌ KHÔNG CHO XÓA, CHỈ CHO ĐỔI TRẠNG THÁI TẠM NGƯNG
-        if ($tour->booking()->count() > 0) {
-            return redirect()->route('admin.tours.index')->with('error', 'Không thể xóa Tour này vì đã có người đặt. Bạn chỉ có thể chuyển trạng thái sang Tạm ngưng!');
+    private function handleInitialSchedule($tourid, $request) {
+        if ($request->filled('startdate') && $request->filled('priceadult')) {
+            DB::table('tbl_tour_schedules')->insert([
+                'tourid'     => $tourid,
+                'startdate'  => $request->startdate,
+                'enddate'    => $request->enddate,
+                'priceadult' => $request->priceadult,
+                'pricechild' => $request->pricechild ?? 0,
+                'quantity'   => $request->quantity ?? 0,
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
         }
+    }
+    public function addSchedule(Request $request)
+{
+    try {
+        $request->validate([
+            'tourid'     => 'required',
+            'startdate'  => 'required|date',
+            'priceadult' => 'required|numeric',
+            'quantity'   => 'required|numeric',
+        ]);
 
-        // 1. Xóa file ảnh chính
-        if ($tour->images) {
-            $imagePath = public_path('clients/assets/images/gallery-tours/' . $tour->images);
-            if (File::exists($imagePath)) {
-                File::delete($imagePath);
-            }
+        // SỬA TẠI ĐÂY: tour_schedules -> tbl_tour_schedules
+        \DB::table('tbl_tour_schedules')->insert([
+            'tourid'     => $request->tourid,
+            'startdate'  => $request->startdate,
+            'enddate'    => $request->enddate,
+            'priceadult' => $request->priceadult,
+            'pricechild' => $request->pricechild ?? 0,
+            'quantity'   => $request->quantity ?? 20,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        return response()->json(['success' => true, 'message' => 'Thêm lịch trình thành công!']);
+        
+    } catch (\Exception $e) {
+        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+    }
+}
+
+public function deleteSchedule($id)
+{
+    try {
+        // SỬA TẠI ĐÂY: tour_schedules -> tbl_tour_schedules
+        // Đảm bảo tên cột khóa chính của bạn là schedule_id
+        \DB::table('tbl_tour_schedules')->where('schedule_id', $id)->delete();
+        return response()->json(['success' => true]);
+    } catch (\Exception $e) {
+        return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
+    }
+}
+
+    private function uploadFile($file, $prefix) {
+        $filename = time() . "_{$prefix}_" . uniqid() . '.' . $file->getClientOriginalExtension();
+        $file->move(public_path($this->imagePath), $filename);
+        return $filename;
+    }
+
+    private function deleteFile($filename) {
+        if ($filename) {
+            $path = public_path($this->imagePath . '/' . $filename);
+            if (File::exists($path)) File::close(File::delete($path));
         }
-
-        // 2. Xóa các file ảnh Gallery
-        foreach ($tour->tourImages as $galleryImg) {
-            $galleryPath = public_path('clients/assets/images/gallery-tours/' . $galleryImg->imageurl);
-            if (File::exists($galleryPath)) {
-                File::delete($galleryPath);
-            }
-        }
-DB::table('tbl_timeline')->where('tourid', $id)->delete();
-        TourImage::where('tourid', $id)->delete();
-        $tour->delete();
-
-        return redirect()->route('admin.tours.index')->with('success', 'Đã xóa toàn bộ Tour và dữ liệu ảnh!');
     }
 }

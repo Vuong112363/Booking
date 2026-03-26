@@ -4,6 +4,9 @@ namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Config;
+use App\Models\Admin\Setting;
+use Illuminate\Support\Facades\DB;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -21,7 +24,32 @@ class AppServiceProvider extends ServiceProvider
 
         //
     
-    public function boot(): void {
-    Paginator::useBootstrapFive(); // Hoặc useBootstrapFour() tùy bản bạn dùng
+public function boot(): void
+{
+    \Illuminate\Pagination\Paginator::useBootstrapFive();
+
+    try {
+        // Đảm bảo dùng đúng tên bảng 'settings'
+        $settings = \DB::table('settings')->pluck('value', 'key');
+
+        if ($settings->isNotEmpty()) {
+            // Lấy driver từ DB, nếu trống thì mặc định là 'smtp'
+            $driver = $settings['mail_driver'] ?? 'smtp';
+            if (empty($driver)) $driver = 'smtp';
+
+            config([
+                'mail.default' => $driver, // QUAN TRỌNG: Phải có dòng này
+                'mail.mailers.smtp.host'       => $settings['mail_host'] ?? 'smtp.gmail.com',
+                'mail.mailers.smtp.port'       => (int)($settings['mail_port'] ?? 587),
+                'mail.mailers.smtp.username'   => $settings['mail_username'] ?? '',
+                'mail.mailers.smtp.password'   => str_replace(' ', '', $settings['mail_password'] ?? ''),
+                'mail.mailers.smtp.encryption' => $settings['mail_encryption'] ?? 'tls',
+                'mail.from.address'            => $settings['mail_username'] ?? '',
+                'mail.from.name'               => $settings['site_name'] ?? 'GoViet Travel',
+            ]);
+        }
+    } catch (\Exception $e) {
+        // Tránh lỗi khi chạy migrate
+    }
 }
 }

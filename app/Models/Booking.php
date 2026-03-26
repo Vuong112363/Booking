@@ -28,6 +28,7 @@ protected $fillable = [
 'paymentmethod',
     'deposit_amount',
     'paid_amount',
+    'refund_amount',
     'paymentstatus'
 
 ];
@@ -44,6 +45,11 @@ return $this->belongsTo(User::class,'userid','userid');
 public function tour()
 {
 return $this->belongsTo(\App\Models\Clients\Tours::class, 'tourid', 'tourid');
+}
+public function schedule()
+{
+    // Giả sử bảng lịch trình là tbl_tour_schedules và khóa ngoại là schedule_id
+    return $this->belongsTo(\App\Models\Clients\TourSchedule::class, 'schedule_id', 'schedule_id');
 }
 
 }

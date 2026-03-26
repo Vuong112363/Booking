@@ -28,7 +28,7 @@
         <form action="{{ route('admin.bookings.index') }}" method="GET">
             <div class="row">
                 <div class="col-md-3 mb-2">
-                    <input type="text" name="keyword" class="form-control" placeholder="Tìm ID đơn, Tên khách, Tên tour..." value="{{ request('keyword') }}">
+                    <input type="text" name="keyword" class="form-control" placeholder="ID, Khách, Tour..." value="{{ request('keyword') }}">
                 </div>
                 
                 <div class="col-md-2 mb-2">
@@ -40,18 +40,19 @@
                     </select>
                 </div>
 
+                {{-- THÊM BỘ LỌC THEO NGÀY ĐI --}}
+                <div class="col-md-2 mb-2">
+                    <input type="date" name="start_date" class="form-control" title="Lọc theo ngày khởi hành" value="{{ request('start_date') }}">
+                    <small class="text-muted">Lọc theo ngày đi</small>
+                </div>
+                
                 <div class="col-md-3 mb-2">
                     <select name="payment" class="form-control">
                         <option value="">-- Trạng thái Thanh toán --</option>
                         <option value="paid" {{ request('payment') == 'paid' ? 'selected' : '' }}>Đã thanh toán (100%)</option>
                         <option value="deposit_paid" {{ request('payment') == 'deposit_paid' ? 'selected' : '' }}>Đã đặt cọc</option>
                         <option value="unpaid" {{ request('payment') == 'unpaid' ? 'selected' : '' }}>Chưa thanh toán</option>
-                        <option value="refund_pending" {{ request('payment') == 'refund_pending' ? 'selected' : '' }}>Chờ hoàn tiền</option>
                     </select>
-                </div>
-                
-                <div class="col-md-2 mb-2">
-                    <input type="date" name="date" class="form-control" value="{{ request('date') }}">
                 </div>
                 
                 <div class="col-md-2 mb-2">
@@ -68,9 +69,9 @@
                     <th class="text-center">Mã Đơn</th>
                     <th>Khách Hàng</th>
                     <th>Thông Tin Tour</th>
+                    <th class="text-center">Ngày Khởi Hành</th> {{-- THÊM CỘT NÀY --}}
                     <th class="text-right">Tài Chính</th>
-                    <th class="text-center">Trạng Thái Đơn</th>
-                    <th class="text-center">Thanh Toán</th>
+                    <th class="text-center">Trạng Thái</th>
                     <th class="text-center">Thao Tác</th>
                 </tr>
             </thead>
@@ -87,36 +88,42 @@
                         <small class="text-muted"><i class="fas fa-users"></i> {{ $item->numadults }} Lớn, {{ $item->numchildren }} Nhỏ</small>
                     </td>
                     <td>
-                        {{ Str::limit($item->tour->title ?? 'N/A', 35) }}<br>
-                        <small class="text-muted"><i class="far fa-calendar-alt"></i> Ngày đặt: {{ \Carbon\Carbon::parse($item->bookingdate)->format('d/m/Y') }}</small>
+                        <span title="{{ $item->tour->title ?? '' }}">{{ Str::limit($item->tour->title ?? 'N/A', 30) }}</span><br>
+                        <small class="text-muted"><i class="far fa-calendar-alt"></i> Đặt lúc: {{ \Carbon\Carbon::parse($item->bookingdate)->format('H:i d/m') }}</small>
                     </td>
+                    
+                    {{-- HIỂN THỊ NGÀY ĐI TỪ BẢNG LỊCH TRÌNH --}}
+                    <td class="text-center">
+                        @if($item->schedule)
+                            <div class="badge badge-info shadow-sm p-2" style="font-size: 13px;">
+                                <i class="fas fa-bus mr-1"></i> {{ \Carbon\Carbon::parse($item->schedule->startdate)->format('d/m/Y') }}
+                            </div>
+                        @else
+                            <span class="badge badge-secondary p-2" style="font-size: 11px; opacity: 0.7;">Chưa có lịch</span>
+                        @endif
+                    </td>
+
                     <td class="text-right">
                         <div>Tổng: <strong class="text-danger">{{ number_format($item->totalprice, 0, ',', '.') }}đ</strong></div>
                         <div><small class="text-success">Đã thu: {{ number_format($item->paid_amount ?? 0, 0, ',', '.') }}đ</small></div>
                     </td>
                     <td class="text-center">
+                        {{-- Gộp trạng thái đơn và thanh toán cho gọn --}}
                         @if($item->bookingstatus == 'confirmed')
-                            <span class="badge badge-success"><i class="fas fa-check-circle"></i> Đã duyệt</span>
+                            <span class="badge badge-success">Đã duyệt</span>
                         @elseif($item->bookingstatus == 'pending')
-                            <span class="badge badge-warning"><i class="fas fa-hourglass-half"></i> Chờ duyệt</span>
+                            <span class="badge badge-warning">Chờ duyệt</span>
                         @else
-                            <span class="badge badge-danger"><i class="fas fa-times-circle"></i> Đã hủy</span>
+                            <span class="badge badge-danger">Đã hủy</span>
                         @endif
+                        <br>
+                        <small class="{{ $item->paymentstatus == 'paid' ? 'text-success' : 'text-muted' }}">
+                             {{ $item->paymentstatus == 'paid' ? '● Đã trả đủ' : '○ Chưa trả đủ' }}
+                        </small>
                     </td>
                     <td class="text-center">
-                        @if($item->paymentstatus == 'paid')
-                            <span class="badge badge-success">Đã thanh toán</span>
-                        @elseif($item->paymentstatus == 'deposit_paid')
-                            <span class="badge badge-info">Đã đặt cọc</span>
-                        @elseif($item->paymentstatus == 'refund_pending')
-                            <span class="badge badge-warning">Chờ hoàn tiền</span>
-                        @else
-                            <span class="badge badge-secondary">Chưa thanh toán</span>
-                        @endif
-                    </td>
-                    <td class="text-center">
-                        <a href="{{ route('admin.bookings.show', $item->bookingid) }}" class="btn btn-sm btn-primary shadow-sm">
-                            <i class="fas fa-eye"></i> Xử lý
+                        <a href="{{ route('admin.bookings.show', $item->bookingid) }}" class="btn btn-sm btn-outline-primary shadow-sm px-3">
+                            <i class="fas fa-edit"></i> Xử lý
                         </a>
                     </td>
                 </tr>
@@ -124,7 +131,7 @@
                 <tr>
                     <td colspan="7" class="text-center py-5 text-muted">
                         <i class="fas fa-box-open fa-3x mb-3 text-light"></i><br>
-                        Không tìm thấy đơn hàng nào phù hợp với bộ lọc
+                        Không tìm thấy đơn hàng nào phù hợp
                     </td>
                 </tr>
                 @endforelse
@@ -132,10 +139,8 @@
         </table>
     </div>
     
-    <div class="card-footer clearfix mt-2">
-        <div class="float-right">
-            {{ $bookings->appends(request()->query())->links('pagination::bootstrap-4') }}
-        </div>
+    <div class="card-footer clearfix mt-2 text-right">
+        {{ $bookings->appends(request()->query())->links('pagination::bootstrap-4') }}
     </div>
 </div>
 @stop

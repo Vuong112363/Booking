@@ -5,43 +5,48 @@ namespace App\Mail;
 use Illuminate\Bus\Queueable;
 use Illuminate\Mail\Mailable;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\DB;
 
 class BookingConfirmationMail extends Mailable
 {
     use Queueable, SerializesModels;
 
     public $bookingDetail;
+    public $settings;
 
+    /**
+     * Khởi tạo class mail
+     * @param object $bookingDetail Dữ liệu booking đã được Join đầy đủ từ Controller
+     */
     public function __construct($bookingDetail)
     {
         $this->bookingDetail = $bookingDetail;
+        
+        // Tự động lấy cấu hình từ bảng settings để hiển thị ở Footer
+        $this->settings = DB::table('settings')->pluck('value', 'key')->toArray();
     }
-// File: app/Mail/BookingConfirmationMail.php
 
-public function build()
-{
-    $id = $this->bookingDetail->bookingid;
-    
-    // ƯU TIÊN KIỂM TRA TRẠNG THÁI HỦY TRƯỚC
-    if ($this->bookingDetail->bookingstatus === 'cancelled') {
-        $subject = "Xác nhận Hủy đơn đặt Tour - #$id";
+    /**
+     * Xây dựng nội dung Email
+     */
+    public function build()
+    {
+        $id = $this->bookingDetail->bookingid;
+        $siteName = $this->settings['site_name'] ?? 'GoViet Travel';
+
+        // Tự động xác định Tiêu đề Email dựa trên trạng thái thực tế
+        if ($this->bookingDetail->bookingstatus === 'cancelled') {
+            $subject = "🔔 [Thông báo] Hủy đơn đặt Tour #$id - $siteName";
+        } else {
+            $subject = match($this->bookingDetail->paymentstatus) {
+                'paid'         => "✅ [Xác nhận] Đã thanh toán 100% đơn #$id - $siteName",
+                'deposit_paid' => "💳 [Xác nhận] Đã nhận tiền đặt cọc đơn #$id - $siteName",
+                'refund_pending' => "💰 [Thông báo] Đang xử lý hoàn tiền đơn #$id",
+                default        => "📨 [Xác nhận] Đơn đặt Tour mới #$id - $siteName",
+            };
+        }
+
         return $this->subject($subject)
                     ->view('emails.booking_confirmation');
     }
-
-    // NẾU KHÔNG HỦY THÌ MỚI XÉT CÁC TRẠNG THÁI THANH TOÁN
-    switch ($this->bookingDetail->paymentstatus) {
-        case 'deposit_paid': 
-            $subject = "Xác nhận thanh toán cọc thành công - #$id"; 
-            break;
-        case 'paid': 
-            $subject = "Xác nhận đã thanh toán 100% - #$id"; 
-            break;
-        default: 
-            $subject = "Xác nhận đặt đơn thành công - #$id"; 
-            break;
-    }
-
-    return $this->subject($subject)->view('emails.booking_confirmation');
-}
 }

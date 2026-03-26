@@ -5,7 +5,8 @@ namespace App\Http\Controllers\clients;
 use App\Http\Controllers\Controller;
 use App\Models\clients\Tours;
 use App\Models\Clients\Review;
-use Illuminate\Support\Facades\DB; // Import thư viện DB
+use Illuminate\Support\Facades\DB;
+use App\Models\Clients\TourSchedule; // Import thư viện DB
 use Illuminate\Http\Request;
 
 class TourDetailController extends Controller
@@ -23,7 +24,11 @@ class TourDetailController extends Controller
 
         // 1. Lấy chi tiết tour
         $tourDetail = $this->tours->getTourDetail($id);
-
+$schedules = TourSchedule::where('tourid', $id)
+            ->whereDate('startdate', '>=', now()) // Bỏ qua các ngày đã qua
+            ->where('quantity', '>', 0) // Chỉ lấy những ngày còn chỗ trống
+            ->orderBy('startdate', 'asc')
+            ->get();
         // 2. Lấy dữ liệu Đánh giá & Thống kê sao
 $reviews = Review::with('user')
                  ->where('tourid', $id)
@@ -64,7 +69,8 @@ $reviews = Review::with('user')
             'averageRating', 
             'ratingCounts', 
             'ratingPercentages', 
-            'hasBooked' // Truyền biến này ra View
+            'hasBooked', // Truyền biến này ra View
+            'schedules'
         ));
     }
 }
