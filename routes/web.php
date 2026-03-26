@@ -70,7 +70,7 @@ Route::middleware(['check.maintenance'])->group(function () {
     });
 
     // --- User Profile ---
-    Route::middleware('auth')->controller(InformationController::class)->group(function () {
+    Route::middleware('user')->controller(InformationController::class)->group(function () {
         Route::get('/user-profile', 'index')->name('infor');
         Route::post('/user-profile', 'update')->name('user.update');
         Route::post('/change-password', 'changePassword')->name('user.password');
