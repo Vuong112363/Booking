@@ -5,7 +5,7 @@
 
 <section class="page-banner-area pt-50 pb-35 rel z-1 bgs-cover" 
          style="background-image: url('{{ asset(get_setting('hero_banner', 'clients/assets/images/banner/image.png')) }}');">
-    <div class="container">
+    <div class="container-fluid px-lg-5">
         <div class="banner-inner text-white">
             <h2 class="page-title mb-10" data-aos="fade-left" data-aos-duration="1500" data-aos-offset="50">{{$title}}</h2>
             <nav aria-label="breadcrumb">
