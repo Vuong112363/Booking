@@ -2,7 +2,7 @@
 @include('clients.blocks.banner', ['title' => 'Khám Phá Hành Trình'])
 
 <section class="tour-grid-page py-5 rel z-1 bg-light">
-    <div class="container">
+    <div class="container-fluid px-lg-5">
         <div class="row g-4">
             
             {{-- SIDEBAR --}}
