@@ -45,7 +45,12 @@
                     @endif
 
                     <div class="ratting"><i class="fas fa-star"></i> 4.8</div>
-                    <a href="#" class="heart"><i class="fas fa-heart"></i></a>
+                    <button class="btn-favorite position-absolute top-0 end-0 m-3 btn btn-light btn-sm rounded-circle shadow-sm z-1" 
+                            data-tour-id="{{ $tour->tourid }}" 
+                            title="Lưu tour này" 
+                            style="width: 32px; height: 32px; padding: 0;">
+                        <i class="fa-heart {{ $tour->is_favorited ? 'fas text-danger' : 'far text-muted' }}"></i>
+                    </button>
                 
                         <a href="{{ route('tour-detail', ['id' => $tour->tourid]) }}">
                             <img src="{{ asset('clients/assets/images/gallery-tours/' . $imageName) }}" alt="{{ $tour->title }}" class="img-fluid rounded">
@@ -252,7 +257,13 @@
                         <div class="rating-floating-compact"><i class="fas fa-star text-warning"></i> 4.8</div>
                         
                         {{-- Nút thả tim (Z-index cao hơn để click không bị nhầm) --}}
-                        <a href="#" class="heart-floating-compact" style="z-index: 10;"><i class="fas fa-heart"></i></a>
+                                            <button class="btn-favorite position-absolute top-0 end-0 m-3 btn btn-light btn-sm rounded-circle shadow-sm z-1" 
+                            data-tour-id="{{ $tour->tourid }}" 
+                            title="Lưu tour này" 
+                            style="width: 32px; height: 32px; padding: 0;">
+                        <i class="fa-heart {{ $tour->is_favorited ? 'fas text-danger' : 'far text-muted' }}"></i>
+                    </button>
+                
                         
                         {{-- Bọc thẻ a quanh ảnh để click chuyển trang --}}
                         <a href="{{ route('tour-detail', ['id' => $tour->tourid]) }}" class="d-block w-100 h-100">
@@ -570,6 +581,92 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
     }
+});
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 1. Cấu hình khung Thông báo (Toast) của SweetAlert2
+    const Toast = Swal.mixin({
+        toast: true,
+        position: 'top-end', // Hiện ở góc trên bên phải
+        showConfirmButton: false,
+        timer: 3000, // Tự động tắt sau 3 giây
+        timerProgressBar: true,
+        didOpen: (toast) => {
+            toast.addEventListener('mouseenter', Swal.stopTimer)
+            toast.addEventListener('mouseleave', Swal.resumeTimer)
+        }
+    });
+
+    // 2. Lấy tất cả các nút yêu thích
+
+    const favoriteButtons = document.querySelectorAll('.btn-favorite');
+
+    favoriteButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault(); 
+
+            const tourId = this.dataset.tourId; 
+            const icon = this.querySelector('i.fa-heart'); 
+            const csrfToken = document.querySelector('meta[name="csrf-token"]').content; 
+
+            // Gửi AJAX request
+            fetch('{{ route("favorite.toggle") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': csrfToken,
+                    'Accept': 'application/json'
+                },
+                credentials: 'same-origin', // Nhớ giữ dòng này nhé
+                body: JSON.stringify({ tourid: tourId })
+            })
+            .then(response => {
+                if (response.status === 401) {
+                    // Thông báo báo lỗi chưa đăng nhập
+                    Toast.fire({
+                        icon: 'warning',
+                        title: 'Vui lòng đăng nhập để lưu tour!'
+                    });
+                    throw new Error('Unauthorized');
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data && data.status === 'added') {
+                    // Đổi icon sang đỏ
+                    icon.classList.remove('far', 'text-muted');
+                    icon.classList.add('fas', 'text-danger');
+                    
+                    // HIỆN THÔNG BÁO THÊM THÀNH CÔNG
+                    Toast.fire({
+                        icon: 'success',
+                        title: 'Đã thêm vào yêu thích 💖'
+                    });
+
+                } else if (data && data.status === 'removed') {
+                    // Đổi icon về xám
+                    icon.classList.remove('fas', 'text-danger');
+                    icon.classList.add('far', 'text-muted');
+
+                    // HIỆN THÔNG BÁO XÓA THÀNH CÔNG
+                    Toast.fire({
+                        icon: 'info',
+                        title: 'Đã bỏ lưu tour này 💔'
+                    });
+                }
+            })
+            .catch(error => {
+                if(error.message !== 'Unauthorized') {
+                    console.error('Lỗi:', error);
+                    Toast.fire({
+                        icon: 'error',
+                        title: 'Có lỗi xảy ra, vui lòng thử lại!'
+                    });
+                }
+            });
+        });
+    });
 });
 </script>
 

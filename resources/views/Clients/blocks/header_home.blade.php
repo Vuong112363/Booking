@@ -21,7 +21,7 @@
 <link rel="stylesheet" href="{{ asset('clients/assets/css/aos.css') }}">
 <link rel="stylesheet" href="{{ asset('clients/assets/css/slick.min.css') }}">
 <link rel="stylesheet" href="{{ asset('clients/assets/css/style.css') }}">
-
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <style>
 .custom-user-dropdown { position: relative; display: inline-block; }

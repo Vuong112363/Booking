@@ -109,11 +109,31 @@
                                     @endif
                                 </td>
                             </tr>
+                            
+                            {{-- LÝ DO HỦY ĐƠN --}}
                             @if($booking->bookingstatus == 'cancelled')
                             <tr>
                                 <th class="bg-danger text-white">Lý do hủy đơn</th>
                                 <td class="bg-red-light" style="background: #fff5f5;">
                                     <b class="text-danger">{{ $booking->cancel_reason ?? 'Không có lý do' }}</b>
+                                </td>
+                            </tr>
+                            {{-- ĐÃ SỬA LỖI HTML: Đưa phần hoàn tiền vào trong bảng --}}
+                            <tr style="background: #fffdf5; border: 2px solid #ffc107;">
+                                <th class="bg-warning text-dark">
+                                    <i class="fas fa-undo-alt mr-1"></i> Số tiền hoàn trả
+                                </th>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <strong class="text-danger" style="font-size: 1.3rem;">
+                                            {{ number_format($booking->refund_amount ?? 0) }}đ
+                                        </strong>
+                                        <ul class="ml-3 mb-0 small text-muted" style="list-style: none; padding-left: 0;">
+                                            <li>- Tiền khách đóng: {{ number_format($booking->paid_amount) }}đ</li>
+                                            <li>- Phụ phí đón khách: {{ number_format($booking->pickup_fee_total ?? 0) }}đ</li>
+                                            <li><b>= Tiền hoàn chốt: {{ number_format($booking->refund_amount ?? 0) }}đ</b></li>
+                                        </ul>
+                                    </div>
                                 </td>
                             </tr>
                             @endif
@@ -129,7 +149,6 @@
                 </div>
                 <div class="card-body">
                     <div class="timeline timeline-inverse">
-                        {{-- Mẹo: Bạn có thể query tbl_history để hiện ở đây --}}
                         <div>
                             <i class="fas fa-check bg-success"></i>
                             <div class="timeline-item shadow-none border">
@@ -159,11 +178,7 @@
                 <form action="{{ route('admin.bookings.update_status', $booking->bookingid) }}" method="POST">
                     @csrf
                     <div class="card-body">
-                        @if(session('success'))
-                            <div class="alert alert-success border-0 shadow-sm mb-3">
-                                <i class="icon fas fa-check"></i> {{ session('success') }}
-                            </div>
-                        @endif
+                        {{-- Đã xóa thẻ div alert mặc định để dùng SweetAlert2 thay thế --}}
 
                         <div class="form-group border-bottom pb-3">
                             <label class="text-muted small text-uppercase">Tình trạng Tour</label>
@@ -197,35 +212,15 @@
                         </button>
                         
                         @if($booking->paymentstatus != 'paid' && $booking->bookingstatus != 'cancelled')
+                        {{-- Đổi onclick truyền thống thành class để gọi popup SweetAlert2 --}}
                         <a href="{{ route('admin.bookings.confirm_cash', $booking->bookingid) }}" 
-                           class="btn btn-outline-success btn-block mt-3 shadow-sm font-weight-bold"
-                           onclick="return confirm('Bạn có chắc chắn muốn xác nhận thu tiền mặt toàn bộ đơn hàng này?')">
+                           class="btn btn-outline-success btn-block mt-3 shadow-sm font-weight-bold btn-confirm-cash">
                             <i class="fas fa-hand-holding-usd mr-1"></i> NHẬN TIỀN MẶT 100%
                         </a>
                         @endif
                     </div>
                 </form>
             </div>
-
-            @if($booking->bookingstatus == 'cancelled')
-    <tr style="background: #fffdf5; border: 2px solid #ffc107;">
-        <th class="bg-warning text-dark">
-            <i class="fas fa-undo-alt mr-1"></i> Số tiền hoàn trả (Đã trừ phí đón)
-        </th>
-        <td>
-            <div class="d-flex align-items-center">
-                <strong class="text-danger" style="font-size: 1.3rem;">
-                    {{ number_format($booking->refund_amount) }}đ
-                </strong>
-                <ul class="ml-3 mb-0 small text-muted" style="list-style: none; padding-left: 0;">
-                    <li>- Tiền khách đóng: {{ number_format($booking->paid_amount) }}đ</li>
-                    <li>- Phụ phí đón khách: {{ number_format($booking->pickup_fee_total) }}đ (Khấu trừ)</li>
-                    <li><b>= Tiền hoàn chốt: {{ number_format($booking->refund_amount) }}đ</b></li>
-                </ul>
-            </div>
-        </td>
-    </tr>
-@endif
         </div>
     </div>
 @stop
@@ -242,4 +237,59 @@
         .bg-red-light { background-color: #fff5f5 !important; }
         .timeline-inverse > div > .timeline-item { background-color: #f8f9fa; }
     </style>
+@stop
+
+{{-- BƯỚC 2: KHAI BÁO JAVASCRIPT CHO THÔNG BÁO Ở ĐÂY --}}
+@section('js')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        $(document).ready(function() {
+            // Cấu hình Toast cho form cập nhật
+            const Toast = Swal.mixin({
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true
+            });
+
+            // Nếu Controller gửi về Session 'success'
+            @if(session('success'))
+                Toast.fire({
+                    icon: 'success',
+                    title: '{{ session('success') }}'
+                });
+            @endif
+
+            // Nếu Controller gửi về Session 'error'
+            @if(session('error'))
+                Toast.fire({
+                    icon: 'error',
+                    title: '{{ session('error') }}'
+                });
+            @endif
+
+            // Thay thế popup Confirm mặc định của trình duyệt bằng SweetAlert2 cho nút Thu Tiền Mặt
+            $('.btn-confirm-cash').on('click', function(e) {
+                e.preventDefault(); // Ngăn chặn nhảy trang ngay lập tức
+                let url = $(this).attr('href'); // Lấy link của nút
+                
+                Swal.fire({
+                    title: 'Xác nhận thu tiền?',
+                    text: "Bạn có chắc chắn muốn xác nhận thu tiền mặt 100% cho đơn hàng này?",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#28a745',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Đồng ý, thu tiền!',
+                    cancelButtonText: 'Hủy thao tác'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        // Nếu bấm đồng ý thì chuyển trang
+                        window.location.href = url;
+                    }
+                });
+            });
+        });
+    </script>
 @stop

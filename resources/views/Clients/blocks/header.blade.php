@@ -23,6 +23,7 @@
     <link rel="stylesheet" href="{{ asset('clients/assets/css/slick.min.css') }}">
     <link rel="stylesheet" href="{{ asset('clients/assets/css/style.css') }}">
     <link rel="stylesheet" href="{{ asset('clients/assets/css/user-profile.css') }}">
+   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
     
     <style>

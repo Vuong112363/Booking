@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Clients\Tours;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Cache; // Đừng quên import Cache
+use Illuminate\Support\Facades\Cache;
 
 class ToursController extends Controller
 {
@@ -46,29 +46,24 @@ class ToursController extends Controller
             ->when($request->filled('filter_domain'), fn($q) => $q->where('domain', $request->filter_domain))
             
             // --- B. TÌM KIẾM Ở BẢNG LỊCH TRÌNH (tbl_tour_schedules) ---
-            // Yêu cầu: Tour phải có ít nhất 1 lịch trình mở bán và thỏa mãn các điều kiện lọc
             ->whereExists(function ($subquery) use ($request) {
                 $subquery->select(DB::raw(1))
                          ->from('tbl_tour_schedules')
                          ->whereColumn('tbl_tour_schedules.tourid', 'tbl_tours.tourid')
                          ->whereDate('startdate', '>=', now()); // Chỉ tìm lịch trình chưa xuất phát
 
-                // Lọc theo ngày bắt đầu
                 if ($request->filled('start_date')) {
                     $subquery->whereDate('startdate', '>=', $request->start_date);
                 }
 
-                // Lọc theo ngày kết thúc
                 if ($request->filled('end_date')) {
                     $subquery->whereDate('enddate', '<=', $request->end_date);
                 }
 
-                // Lọc theo số chỗ trống (Giao diện gửi lên là 'guests', DB lưu là 'quantity')
                 if ($request->filled('guests')) {
                     $subquery->where('quantity', '>=', $request->guests);
                 }
 
-                // Lọc theo khoảng thời gian (Số ngày đi)
                 if ($request->filled('filter_duration')) {
                     $duration = explode('-', $request->filter_duration);
                     if (count($duration) == 2) {
@@ -76,7 +71,6 @@ class ToursController extends Controller
                     }
                 }
 
-                // Lọc theo khoảng giá tiền
                 if ($request->filled('price')) {
                     $priceString = preg_replace('/[^0-9\-]/', '', $request->price);
                     $priceRange = explode('-', $priceString);
@@ -121,46 +115,44 @@ class ToursController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Xử lý Request từ AJAX (Đưa lên trước vòng lặp ảnh để tiết kiệm tài nguyên nếu là AJAX)
+        | 3. Xóa lỗi N+1 Query: Gán Ảnh, Giá, Chỗ trống và Trạng thái Yêu thích
         |--------------------------------------------------------------------------
         */
-        if ($request->ajax()) {
-            return response()->json($tours->items()); 
-        }
-
-        /*
-        |--------------------------------------------------------------------------
-    /*
-        |--------------------------------------------------------------------------
-        | 3. Xóa lỗi N+1 Query: Lấy tất cả ảnh mặc định trong 1 lần truy vấn duy nhất
-        |--------------------------------------------------------------------------
-        */
-        // Tìm ra danh sách ID của các tour đang hiển thị trên trang hiện tại
         $tourIds = $tours->pluck('tourid')->filter(); 
 
-        // Truy vấn 1 lần duy nhất để lấy toàn bộ ảnh của các tour này
         if ($tourIds->isNotEmpty()) {
+            // Lấy toàn bộ ảnh mặc định
             $defaultImages = DB::table('tbl_images')
                 ->whereIn('tourid', $tourIds)
                 ->get()
                 ->groupBy('tourid');
 
-            // 3.2 Lấy thông tin Lịch trình (Giá Min & Tổng số chỗ) - CHÍNH LÀ ĐOẠN NÀY ĐÂY
+            // Lấy thông tin Lịch trình (Giá Min & Tổng số chỗ)
             $schedulesInfo = DB::table('tbl_tour_schedules')
                 ->whereIn('tourid', $tourIds)
-                ->whereDate('startdate', '>=', now()) // Chỉ lấy các lịch trình chưa xuất phát
+                ->whereDate('startdate', '>=', now())
                 ->select(
                     'tourid', 
                     DB::raw('MIN(priceadult) as min_price'),
-                    DB::raw('SUM(quantity) as total_quantity') // Tính tổng chỗ trống
+                    DB::raw('SUM(quantity) as total_quantity')
                 )
                 ->groupBy('tourid')
                 ->get()
-                ->keyBy('tourid'); // Đưa về dạng mảng [tourid => data] để truy xuất nhanh
+                ->keyBy('tourid');
+            
+            // Lấy danh sách Tour ID mà user hiện tại đã yêu thích
+            $userFavoriteTourIds = [];
+            if (session()->has('userid')) {
+                $userFavoriteTourIds = DB::table('favorites') 
+                    ->where('userid', session('userid'))
+                    ->whereIn('tourid', $tourIds)
+                    ->pluck('tourid')
+                    ->toArray();
+            }
 
-            // 3.3 Gán dữ liệu vào từng tour
+            // Gán dữ liệu vào từng object tour
             foreach ($tours as $tour) {
-                // --- Xử lý ảnh ---
+                // Xử lý ảnh
                 if (!empty($tour->images)) {
                     $tour->display_image = $tour->images;
                 } else {
@@ -168,19 +160,71 @@ class ToursController extends Controller
                     $tour->display_image = $tourImage ? $tourImage->imageurl : 'default.jpg';
                 }
 
-                // --- Xử lý Giá Min và Số lượng ---
-                
-                // ĐÂY LÀ DÒNG BẠN BỊ THIẾU KHIẾN LỖI UNDEFINED VARIABLE
+                // Xử lý Giá Min và Số lượng
                 $schedule = $schedulesInfo->get($tour->tourid);
-                
-                // Gán giá min
                 $tour->min_price = $schedule ? $schedule->min_price : $tour->priceadult;
-                
-                // Gán số lượng chỗ
                 $tour->quantity = $schedule ? $schedule->total_quantity : ($tour->quantity ?? 0);
+                
+                // Gán trạng thái yêu thích
+                $tour->is_favorited = in_array($tour->tourid, $userFavoriteTourIds);
             }
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Xử lý Request từ AJAX (Ví dụ: Load More, Lọc)
+        | CHÚ Ý: Đặt ở đây để đảm bảo biến $tours đã được gán đầy đủ thuộc tính
+        |--------------------------------------------------------------------------
+        */
+        if ($request->ajax()) {
+            return response()->json($tours->items()); 
         }
 
         return view('clients.Tours', compact('title', 'tours', 'destinations'));
     }
+
+    /*
+    |--------------------------------------------------------------------------
+    | Xử lý Yêu Thích Tour (Gọi bằng AJAX)
+    |--------------------------------------------------------------------------
+    */
+    public function toggleFavorite(Request $request)
+    {
+        try {
+            // Kiểm tra đăng nhập
+            if (!session()->has('userid')) {
+                return response()->json(['status' => 'error', 'message' => 'Vui lòng đăng nhập để lưu tour'], 401);
+            }
+
+            $userid = session('userid');
+            $tourid = $request->tourid; 
+
+            // Sử dụng đúng tên cột userid và tourid
+            $favoriteQuery = DB::table('favorites')
+                ->where('userid', $userid)
+                ->where('tourid', $tourid);
+
+            if ($favoriteQuery->exists()) {
+                // Đã thích -> Bỏ thích
+                $favoriteQuery->delete();
+                return response()->json(['status' => 'removed', 'message' => 'Đã bỏ yêu thích']);
+            } else {
+                // Chưa thích -> Thêm mới
+                DB::table('favorites')->insert([
+                    'userid' => $userid,
+                    'tourid' => $tourid,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                return response()->json(['status' => 'added', 'message' => 'Đã thêm vào yêu thích']);
+            }
+        } catch (\Exception $e) {
+            // TÓM CỔ LỖI VÀ TRẢ VỀ JSON
+            return response()->json([
+                'status' => 'error',
+                'message' => 'LỖI CHÍNH XÁC LÀ: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+        
 }

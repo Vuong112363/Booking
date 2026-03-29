@@ -372,7 +372,6 @@
         <button id="chat-send-btn"><i class="fas fa-paper-plane"></i></button>
     </div>
 </div>
-
 {{-- ================= SCRIPTS HỆ THỐNG ================= --}}
 <script src="{{ asset('clients/assets/js/jquery-3.6.0.min.js') }}"></script>
 <script src="{{ asset('clients/assets/js/bootstrap.min.js') }}"></script>
@@ -388,11 +387,37 @@
 <script src="{{ asset('clients/assets/js/script.js') }}"></script>
 <script src="{{ asset('clients/assets/js/custom-js.js') }}"></script>
 
+{{-- Thư viện Pusher & SweetAlert2 --}}
 <script src="https://js.pusher.com/8.0.1/pusher.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/laravel-echo@1.15.3/dist/echo.iife.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
 <script>
 $(document).ready(function() {
+    // ===== 0. HỆ THỐNG THÔNG BÁO TOÀN CỤC (SweetAlert2) =====
+    // Tự động bắt các session('success') hoặc session('error') từ Laravel
+    @if(session('success'))
+        Swal.fire({
+            icon: 'success',
+            title: 'Thành công!',
+            text: "{{ session('success') }}",
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 3000,
+            timerProgressBar: true
+        });
+    @endif
+
+    @if(session('error'))
+        Swal.fire({
+            icon: 'error',
+            title: 'Thông báo',
+            text: "{{ session('error') }}",
+            confirmButtonColor: '#ff5722'
+        });
+    @endif
+
     // ===== 1. Cấu hình chung & CSRF =====
     const csrfToken = $('meta[name="csrf-token"]').attr('content');
     $.ajaxSetup({ headers: { 'X-CSRF-TOKEN': csrfToken } });
@@ -401,15 +426,15 @@ $(document).ready(function() {
     const chatBody = $('#chat-body');
     const chatInput = $('#chat-input');
     const typingIndicator = $('#chat-typing');
-    let isSending = false; // Chống spam click/enter
-    let isHistoryLoaded = false; // Kiểm tra đã tải lịch sử chưa
+    let isSending = false;
+    let isHistoryLoaded = false;
 
-    // Cuộn xuống cuối cùng
     function scrollToBottom() {
-    chatBody[0].scrollTop = chatBody[0].scrollHeight;
-}
+        if(chatBody.length) {
+            chatBody[0].scrollTop = chatBody[0].scrollHeight;
+        }
+    }
 
-    // Hàm hiển thị tin nhắn lên màn hình (Lọc XSS & xử lý xuống dòng)
     function appendMessage(text, className) {
         if (!text) return;
         let textSafe = $('<div>').text(text).html(); 
@@ -421,16 +446,16 @@ $(document).ready(function() {
         scrollToBottom();
     }
 
-    // ===== 2. Khởi tạo Real-time (Laravel Echo & Pusher) =====
+    // ===== 2. Khởi tạo Real-time (Laravel Echo) =====
     window.Echo = new Echo({
         broadcaster: 'pusher',
         key: '9501c7beb77a1a519ef4',
         cluster: 'ap1',
         forceTLS: true
     });
-let backToTopBtn = $('#backToTopBtn');
 
-    // Hiện nút khi cuộn xuống quá 300px
+    // Back to Top Logic
+    let backToTopBtn = $('#backToTopBtn');
     $(window).scroll(function() {
         if ($(window).scrollTop() > 300) {
             backToTopBtn.fadeIn(300);
@@ -439,39 +464,35 @@ let backToTopBtn = $('#backToTopBtn');
         }
     });
 
-    // Nhấp vào nút để cuộn lên đầu trang mượt mà
     backToTopBtn.on('click', function(e) {
         e.preventDefault();
-        $('html, body').animate({ scrollTop: 0 }, 800); // Tốc độ cuộn 800ms
+        $('html, body').animate({ scrollTop: 0 }, 800);
         return false;
     });
+
+    // Chat Real-time Listener
     let currentUserId = "{{ session('userid') }}";
+    if (currentUserId && !window.chatInitialized) {
+        window.chatInitialized = true;
+        window.Echo.channel('chat-room.' + currentUserId)
+        .listen('.new-message', (data) => {
+            if (data.senderClass !== 'msg-user') {
+                typingIndicator.hide();
+                appendMessage(data.message, data.senderClass);
+            }
+        });
+    }
 
-if (!window.chatInitialized) {
-    window.chatInitialized = true;
-
-    window.Echo.channel('chat-room.' + currentUserId)
-    .listen('.new-message', (data) => {
-        if (data.senderClass !== 'msg-user') {
-            typingIndicator.hide();
-            appendMessage(data.message, data.senderClass);
-        }
-    });
-}
-
-    // ===== 3. Hàm tải lịch sử tin nhắn (Fetch History) =====
+    // ===== 3. Hàm tải lịch sử tin nhắn =====
     function loadChatHistory() {
-        if (isHistoryLoaded) return; // Nếu đã tải rồi thì không tải lại
-
+        if (isHistoryLoaded) return;
         $.get("{{ url('/chat/fetch-messages') }}", function(res) {
             if (res.status === 'success') {
-                console.log(res);
-                chatBody.find('.msg-bubble').not('#chat-typing').remove(); // Xóa các tin nhắn tạm (nếu có)
+                chatBody.find('.msg-bubble').not('#chat-typing').remove();
                 res.messages.forEach(msg => {
                     let className = 'msg-bot';
                     if (msg.adminid == 0) className = 'msg-user';
                     else if (msg.adminid != 999) className = 'msg-admin';
-                    
                     appendMessage(msg.message, className);
                 });
                 isHistoryLoaded = true;
@@ -485,41 +506,28 @@ if (!window.chatInitialized) {
         let text = chatInput.val().trim();
         if (text === '' || isSending) return;
 
-        isSending = true; // Khóa nút gửi
-        chatInput.val('').focus(); // Xóa ô nhập liệu
-
-        // Hiển thị ngay tin nhắn của User (Local append)
+        isSending = true;
+        chatInput.val('').focus();
         appendMessage(text, 'msg-user');
-        
-        // Hiển thị hiệu ứng chờ
         typingIndicator.show();
         scrollToBottom();
 
-        // Gửi lên server
         $.post("{{ url('/chat/send') }}", { message: text })
-            .done(function(res) {
-                // Nếu server trả về reply trực tiếp (không qua Pusher) thì dùng dòng dưới:
-                // typingIndicator.hide();
-                // appendMessage(res.reply, 'msg-bot');
-            })
             .fail(function() {
                 typingIndicator.hide();
-                appendMessage('Lỗi hệ thống! Vui lòng thử lại sau.', 'msg-bot text-danger');
+                appendMessage('Lỗi kết nối! Vui lòng thử lại.', 'msg-bot text-danger');
             })
             .always(function() {
-                isSending = false; // Mở khóa nút gửi
+                isSending = false;
             });
     }
 
-    // ===== 5. Đăng ký sự kiện (Event Listeners) =====
-
-    // Click nút gửi
+    // ===== 5. Đăng ký sự kiện UI =====
     $('#chat-send-btn').on('click', function(e) {
         e.preventDefault();
         sendMessage();
     });
 
-    // Nhấn Enter để gửi
     $('#chat-input').on('keypress', function(e) {
         if (e.which == 13 && !e.shiftKey) {
             e.preventDefault();
@@ -527,21 +535,21 @@ if (!window.chatInitialized) {
         }
     });
 
-    // Mở khung chat & Tải lịch sử
     $('#chat-bot-btn').on('click', function(e) {
         e.preventDefault();
         chatBox.fadeToggle(300, function() {
             if ($(this).is(':visible')) {
                 $(this).css('display', 'flex');
-                loadChatHistory(); // Tải tin nhắn cũ khi vừa mở chat
+                loadChatHistory();
                 scrollToBottom();
             }
         });
     });
 
-    // Đóng khung chat
     $('#close-chat-btn').on('click', function() {
         chatBox.fadeOut(300);
     });
+
+    
 });
 </script>

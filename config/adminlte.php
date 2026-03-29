@@ -10,7 +10,7 @@ return [
 
     'title' => 'GoViet Admin',
     'title_prefix' => '',
-    'title_postfix' => '',
+    'title_postfix' => '| GoViet',
 
     /*
     |--------------------------------------------------------------------------
@@ -39,7 +39,7 @@ return [
 
     'logo' => '',
     'logo_img' => 'clients/assets/images/logos/logo-two.png',
-    'logo_img_class' => 'img-fluid px-5', // Giảm đổ bóng để logo nhìn phẳng hơn
+    'logo_img_class' => 'brand-image ', 
     'logo_img_xl' => null,
     'logo_img_xl_class' => 'brand-image-xs',
     'logo_img_alt' => 'GoViet Logo',
@@ -53,7 +53,7 @@ return [
     'auth_logo' => [
         'enabled' => false,
         'img' => [
-            'path' => 'vendor/adminlte/dist/img/AdminLTELogo.png',
+            'path' => 'clients/assets/images/logos/logo-two.png',
             'alt' => 'Auth Logo',
             'class' => '',
             'width' => 50,
@@ -71,7 +71,7 @@ return [
         'enabled' => false, 
         'mode' => 'fullscreen',
         'img' => [
-            'path' => 'clients/assets/images/logos/logo-tow.png',
+            'path' => 'clients/assets/images/logos/logo-two.png',
             'alt' => 'GoViet Preloader',
             'effect' => 'animation__shake',
             'width' => 60,
@@ -87,7 +87,7 @@ return [
 
     'usermenu_enabled' => true,
     'usermenu_header' => true, 
-    'usermenu_header_class' => 'bg-info', // Dùng class info (gần nhất với #4CBEE1) cho header của user
+    'usermenu_header_class' => 'bg-info', 
     'usermenu_image' => true,
     'usermenu_desc' => true,
     'usermenu_profile_url' => true,
@@ -111,37 +111,32 @@ return [
     |--------------------------------------------------------------------------
     */
 
-    'classes_auth_card' => 'card-outline card-info', // Bo viền màu info
+    'classes_auth_card' => 'card-outline card-info shadow-lg',
     'classes_auth_header' => '',
     'classes_auth_body' => '',
     'classes_auth_footer' => '',
     'classes_auth_icon' => '',
-    'classes_auth_btn' => 'btn-flat btn-info', // Nút bấm login màu info
+    'classes_auth_btn' => 'btn-flat btn-info', 
 
     /*
     |--------------------------------------------------------------------------
-    | Admin Panel Classes (ĐỘT PHÁ & MÀU CHỦ ĐẠO NẰM Ở ĐÂY 👇)
+    | Admin Panel Classes
     |--------------------------------------------------------------------------
     */
 
-    // text-sm: font chữ tinh tế. accent-info: các điểm nhấn (như checkbox, thanh cuộn, link) sẽ ăn theo màu info (#4CBEE1)
     'classes_body' => 'text-sm accent-info', 
-    
-    // Nền logo màu trắng, chữ màu xám đậm để không bị "chói"
     'classes_brand' => 'bg-white border-bottom border-light', 
     'classes_brand_text' => 'text-dark font-weight-bold', 
-    
-    'classes_content_wrapper' => 'bg-light', // Nền nội dung xám siêu nhạt
+    'classes_content_wrapper' => 'bg-light', 
     'classes_content_header' => '',
     'classes_content' => '',
     
-    // Sidebar sáng (trắng). Khi active menu sẽ nổi lên màu info (#4CBEE1). elevation-2 để tạo bóng đổ nhẹ nhàng.
-    'classes_sidebar' => 'sidebar-light-info elevation-2', 
+    // Nâng cấp: Sidebar sáng, đổ bóng sâu (elevation-4), màu nhấn là Info
+    'classes_sidebar' => 'sidebar-light-info elevation-4', 
     
-    // Giao diện phẳng (flat), thụt lề rõ ràng, các icon nhỏ gọn (compact)
-    'classes_sidebar_nav' => 'nav-flat nav-legacy nav-compact nav-child-indent', 
+    // Nâng cấp: nav-pills (bo tròn menu active), nav-child-indent (thụt lề menu con chuyên nghiệp)
+    'classes_sidebar_nav' => 'nav-pills nav-sidebar flex-column nav-child-indent nav-compact', 
     
-    // Thanh Navbar phía trên cùng: Chuyển sang màu info (gần với #4CBEE1 nhất) và xóa viền dưới.
     'classes_topnav' => 'navbar-info navbar-dark border-bottom-0', 
     'classes_topnav_nav' => 'navbar-expand',
     'classes_topnav_container' => 'container',
@@ -155,9 +150,9 @@ return [
     'sidebar_mini' => 'lg',
     'sidebar_collapse' => false,
     'sidebar_collapse_auto_size' => false,
-    'sidebar_collapse_remember' => false,
+    'sidebar_collapse_remember' => true,
     'sidebar_collapse_remember_no_transition' => true,
-    'sidebar_scrollbar_theme' => 'os-theme-dark', // Do menu trái nền sáng, thanh cuộn nên để dark/xám
+    'sidebar_scrollbar_theme' => 'os-theme-dark',
     'sidebar_scrollbar_auto_hide' => 'l',
     'sidebar_nav_accordion' => true,
     'sidebar_nav_animation_speed' => 300,
@@ -204,12 +199,12 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Menu Items
+    | Menu Items (ĐÃ ĐƯỢC TỐI ƯU PHÂN CẤP)
     |--------------------------------------------------------------------------
     */
 
     'menu' => [
-        // Navbar items:
+        // Navbar
         [
             'type' => 'navbar-search',
             'text' => 'Tìm kiếm...',
@@ -220,71 +215,77 @@ return [
             'topnav_right' => true,
         ],
 
-        // Sidebar items:
+        // Sidebar
         [
             'type' => 'sidebar-menu-search',
-            'text' => 'Tìm kiếm...',
+            'text' => 'Tìm kiếm nhanh...',
         ],
         [
             'text' => 'Bảng điều khiển',
             'route'  => 'admin.dashboard',
-            'icon' => 'fas fa-tachometer-alt',
+            'icon' => 'fas fa-chart-line',
+            'label' => 'HOT',
+            'label_color' => 'success',
         ],
         
         ['header' => 'QUẢN LÝ NGHIỆP VỤ'],
         [
-            'text' => 'Quản lý Tour',
-            'url'  => 'admin/tours',
-            'icon' => 'fas fa-map-marked-alt',
+            'text'    => 'Vận hành Tours',
+            'icon'    => 'fas fa-map-marked-alt',
+            'submenu' => [
+                [
+                    'text' => 'Danh sách Tour',
+                    'url'  => 'admin/tours',
+                    'icon' => 'fas fa-list-ul',
+                ],
+                [
+                    'text' => 'Quản lý Booking',
+                    'url' => 'admin/bookings',
+                    'icon' => 'fas fa-calendar-check',
+                ],
+                [
+                    'text' => 'Đánh giá khách hàng',
+                    'route' => 'admin.reviews.index',
+                    'icon' => 'fas fa-star',
+                ],
+            ],
         ],
         [
-            'text' => 'Quản lý Booking',
-            'url' => 'admin/bookings',
-            'icon' => 'fas fa-calendar-check'
+            'text'    => 'Marketing & Sale',
+            'icon'    => 'fas fa-bullhorn',
+            'submenu' => [
+                [
+                    'text' => 'Mã giảm giá',
+                    'route' => 'admin.promotions.index',
+                    'icon' => 'fas fa-tags',
+                ],
+                [
+                    'text' => 'Bài viết/Blog',
+                    'route' => 'admin.blogs.index',
+                    'icon' => 'fas fa-newspaper',
+                ],
+            ],
         ],
+
+        ['header' => 'KHÁCH HÀNG & HỖ TRỢ'],
         [
-            'text' => 'Quản lý User',
+            'text' => 'Quản lý Người dùng',
             'url' => 'admin/users',
-            'icon' => 'fas fa-users'
+            'icon' => 'fas fa-users-cog',
         ],
         [
-            'text' => 'Quản lý đánh giá',
-            'route' => 'admin.reviews.index',
-            'icon' => 'fas fa-star'
-        ],
-        [
-            'text' => 'Quản lý mã giảm giá',
-            'route' => 'admin.promotions.index',
-            'icon' => 'fas fa-tags',
-        ],
-        [
-            'text' => 'Quản lý Bài viết',
-            'route' => 'admin.blogs.index',
-            'icon' => 'fas fa-newspaper',
-        ],
-        [
-            'text' => 'Tin nhắn & Hỗ trợ', 
+            'text' => 'Tin nhắn hỗ trợ', 
             'route' => 'admin.chats.index',
             'icon' => 'fas fa-comments',
             'label' => 3, 
-            'label_color' => 'danger', // Để màu đỏ cho dễ chú ý tin nhắn mới
+            'label_color' => 'danger',
         ],
 
         ['header' => 'CÀI ĐẶT HỆ THỐNG'],
         [
-            'text' => 'Cài đặt chung',
-            'url' => 'admin/settings', // Route ảo, bạn sửa lại theo thực tế
-            'icon' => 'fas fa-cogs',
-        ],
-        [
-            'text' => 'Hồ sơ cá nhân',
+            'text' => 'Cấu hình chung',
             'url' => 'admin/settings',
-            'icon' => 'fas fa-fw fa-user',
-        ],
-        [
-            'text' => 'Đổi mật khẩu',
-            'url' => 'admin/settings',
-            'icon' => 'fas fa-fw fa-lock',
+            'icon' => 'fas fa-tools',
         ],
     ],
 
@@ -312,7 +313,7 @@ return [
 
     'plugins' => [
         'Datatables' => [
-            'active' => false,
+            'active' => true,
             'files' => [
                 ['type' => 'js', 'asset' => false, 'location' => '//cdn.datatables.net/1.10.19/js/jquery.dataTables.min.js'],
                 ['type' => 'js', 'asset' => false, 'location' => '//cdn.datatables.net/1.10.19/js/dataTables.bootstrap4.min.js'],
@@ -320,20 +321,20 @@ return [
             ],
         ],
         'Select2' => [
-            'active' => false,
+            'active' => true,
             'files' => [
                 ['type' => 'js', 'asset' => false, 'location' => '//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js'],
                 ['type' => 'css', 'asset' => false, 'location' => '//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.css'],
             ],
         ],
         'Chartjs' => [
-            'active' => false,
+            'active' => true,
             'files' => [
                 ['type' => 'js', 'asset' => false, 'location' => '//cdnjs.cloudflare.com/ajax/libs/Chart.js/2.7.0/Chart.bundle.min.js'],
             ],
         ],
         'Sweetalert2' => [
-            'active' => false,
+            'active' => true,
             'files' => [
                 ['type' => 'js', 'asset' => false, 'location' => '//cdn.jsdelivr.net/npm/sweetalert2@8'],
             ],

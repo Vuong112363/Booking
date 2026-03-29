@@ -152,7 +152,7 @@ public function index()
         }
 
         return redirect('/')
-        ->with('success','Đăng nhập thành công');
+        ->with('success','Đăng nhập thành công. Chào mừng '.$user->username.'!');
 
 
 

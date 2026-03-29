@@ -285,15 +285,48 @@
 
                             {{-- TAB 3: TOUR YÊU THÍCH --}}
                             <div class="tab-pane fade" id="wishlist" role="tabpanel">
-                                <div class="text-center py-5">
-                                    <div class="mb-4">
-                                        <i class="fas fa-heart fa-4x text-danger opacity-10"></i>
+                                @if(isset($tours_wishlist) && $tours_wishlist->count() > 0)
+                                    <div class="row">
+                                        @foreach($tours_wishlist as $tour)
+                                            <div class="col-md-6 col-lg-4 mb-4">
+                                                <div class="card h-100 shadow-sm border-0 position-relative">
+                                                    <button class="btn-favorite position-absolute top-0 end-0 m-2 btn btn-danger btn-sm rounded-circle shadow-sm z-1" 
+                                                            data-tour-id="{{ $tour->tourid }}" 
+                                                            title="Bỏ yêu thích">
+                                                        <i class="fas fa-heart"></i>
+                                                    </button>
+
+                                                    <img src="{{ asset('clients/assets/images/gallery-tours/' . $tour->display_image) }}" 
+                                                                                                            class="card-img-top" 
+                                                                                                            alt="{{ $tour->title }}" 
+                                                                                                            style="height: 200px; object-fit: cover;">
+                                                    <div class="card-body">
+                                                        <h6 class="card-title font-weight-bold">{{ $tour->title }}</h6>
+                                                        <p class="text-danger font-weight-bold mb-0">{{ number_format($tour->min_price) }}đ</p>
+                                                    </div>
+                                                    <div class="card-footer bg-white border-0 pb-3">
+                                                        <a href="{{ route('tour-detail', $tour->tourid) }}" class="btn btn-outline-primary btn-sm btn-block rounded-pill">Xem chi tiết</a>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        @endforeach
                                     </div>
-                                    <h5 class="text-muted">Danh sách yêu thích đang trống</h5>
-                                    <p class="small text-muted mb-4">Hãy lưu lại những điểm đến mơ ước của bạn!</p>
-                                    <a href="{{ route('Tours') }}" class="btn btn-primary rounded-pill px-4 shadow-sm">Khám phá tour ngay</a>
-                                </div>
+                                    <div class="d-flex justify-content-center mt-4">
+                                        {{ $tours_wishlist->links() }}
+                                    </div>
+                                @else
+                                    {{-- Giao diện trống (Code cũ của bạn) --}}
+                                    <div class="text-center py-5">
+                                        <div class="mb-4">
+                                            <i class="fas fa-heart fa-4x text-danger opacity-10"></i>
+                                        </div>
+                                        <h5 class="text-muted">Danh sách yêu thích đang trống</h5>
+                                        <p class="small text-muted mb-4">Hãy lưu lại những điểm đến mơ ước của bạn!</p>
+                                        <a href="{{ route('Tours') }}" class="btn btn-primary rounded-pill px-4 shadow-sm">Khám phá tour ngay</a>
+                                    </div>
+                                @endif
                             </div>
+                            
                         </div>
                     </div>
                 </div>

@@ -46,6 +46,8 @@ Route::middleware(['check.maintenance'])->group(function () {
     Route::get('/contact', fn() => view('Clients.contact'))->name('contact');
     Route::post('/contact/send', [ContactController::class, 'send'])->name('contact.send');
     Route::post('/review/store', [ReviewController::class, 'store'])->name('review.store');
+    Route::post('/tour/favorite', [ToursController::class, 'toggleFavorite'])->name('favorite.toggle');
+    
 
     // --- Authentication & Password Reset ---
     Route::controller(LoginController::class)->group(function () {
@@ -75,6 +77,7 @@ Route::middleware(['check.maintenance'])->group(function () {
         Route::post('/user-profile', 'update')->name('user.update');
         Route::post('/change-password', 'changePassword')->name('user.password');
         Route::post('/upload-avatar', 'uploadAvatar')->name('user.avatar');
+        
     });
 
     // --- Booking & Payment (Yêu cầu đăng nhập) ---
@@ -92,6 +95,7 @@ Route::middleware(['check.maintenance'])->group(function () {
             // Thanh toán Momo
             Route::get('/momo-payment/{id}', 'momo_payment');
             Route::get('/momo-return/{id}', 'momo_return');
+           
         });
 
         // Chat khách hàng
@@ -136,6 +140,8 @@ Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
         Route::delete('/delete/{id}', 'delete')->name('delete');
         Route::post('/schedule/add', 'addSchedule')->name('schedule.add');
         Route::delete('/schedule/delete/{id}', 'deleteSchedule')->name('schedule.delete');
+        Route::post('/toggle-status', 'toggleAvailability')->name('toggle');
+        
     });
 
     // Quản lý Bookings
@@ -147,14 +153,23 @@ Route::prefix('admin')->name('admin.')->middleware('admin')->group(function () {
     });
 
     // Quản lý Users
-    Route::prefix('users')->name('users.')->controller(UserController::class)->group(function () {
-        Route::get('/', 'index')->name('index'); 
-        Route::get('/delete/{id}', 'delete')->name('delete');
-        Route::get('/block/{id}', 'block')->name('block');
-        Route::get('/active/{id}', 'active')->name('active');
-        Route::get('/make-admin/{id}', 'makeAdmin')->name('makeAdmin'); 
-        Route::get('/remove-admin/{id}', 'removeAdmin')->name('removeAdmin'); 
-    });
+// Quản lý Users
+Route::prefix('users')->name('users.')->controller(UserController::class)->group(function () {
+    Route::get('/', 'index')->name('index'); 
+    Route::get('/show/{id}', 'show')->name('show');
+    Route::get('/delete/{id}', 'delete')->name('delete');
+    
+    // THÊM DÒNG NÀY:
+    Route::get('/toggle-status/{id}', 'toggleStatus')->name('toggleStatus');
+    Route::put('/update/{id}', 'update')->name('update');
+
+    // Bạn có thể giữ hoặc xóa block/active cũ nếu không dùng nữa
+    Route::get('/block/{id}', 'block')->name('block');
+    Route::get('/active/{id}', 'active')->name('active');
+    
+    Route::get('/make-admin/{id}', 'makeAdmin')->name('makeAdmin'); 
+    Route::get('/remove-admin/{id}', 'removeAdmin')->name('removeAdmin'); 
+});
 
     // Quản lý Reviews & Promotions
     Route::prefix('reviews')->name('reviews.')->controller(AdminReviewController::class)->group(function () {

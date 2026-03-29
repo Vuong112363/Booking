@@ -1,0 +1,127 @@
+/* 1. Nhúng font chữ hiện đại */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+body {
+    font-family: 'Inter', sans-serif !important;
+    letter-spacing: -0.01em;
+}
+
+/* 2. CĂN CHỈNH LOGO (Fix lỗi dính chữ và lệch tâm) */
+.brand-link {
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 1.8rem 0.5rem !important;
+    border-bottom: none !important;
+}
+
+.brand-image-centered {
+    float: none !important;
+    max-height: 55px !important; /* Chỉnh logo to rõ hơn */
+    width: auto !important;
+    margin: 0 auto !important;
+    display: block !important;
+}
+
+/* 3. SIDEBAR (Phong cách SaaS Tối giản) */
+.main-sidebar {
+    background-color: #ffffff !important;
+    border-right: 1px solid #f1f3f5 !important;
+}
+
+.nav-sidebar .nav-item {
+    margin: 4px 14px !important; /* Tạo khoảng trống giữa các mục menu */
+}
+
+.nav-sidebar .nav-link {
+    border-radius: 12px !important; /* Bo góc mềm mại */
+    padding: 0.85rem 1.1rem !important;
+    color: #495057 !important;
+    font-weight: 500;
+    transition: all 0.2s ease-in-out;
+}
+
+/* Khi di chuột qua (Hover) */
+.nav-sidebar .nav-link:hover {
+    background-color: #f8f9fa !important;
+    color: #17a2b8 !important;
+}
+
+/* Khi đang ở trang đó (Active) */
+.sidebar-light-info .nav-sidebar > .nav-item > .nav-link.active {
+    background-color: #e3f2fd !important; /* Xanh nhạt tinh tế */
+    color: #0d6efd !important;
+    font-weight: 600;
+    box-shadow: none !important;
+}
+
+/* Vạch đứng chỉ thị menu Active */
+.nav-sidebar .nav-link.active::before {
+    content: "";
+    position: absolute;
+    left: -14px;
+    top: 25%;
+    height: 50%;
+    width: 4px;
+    background-color: #0d6efd;
+    border-radius: 0 4px 4px 0;
+}
+
+/* 4. ICON (Đồng bộ và sạch sẽ) */
+.nav-sidebar .nav-link i {
+    margin-right: 12px !important;
+    width: 25px;
+    text-align: center;
+    font-size: 1.1rem;
+    color: #adb5bd; /* Màu icon xám nhẹ thanh thoát */
+}
+
+.nav-link.active i {
+    color: #0d6efd !important;
+}
+
+/* 5. FIX LỖI NÚT GẠT TRẠNG THÁI (Hết đè chữ) */
+.ios-switch {
+    padding-left: 3.8rem !important;
+    position: relative;
+}
+
+.ios-switch .custom-control-label {
+    cursor: pointer;
+    font-weight: 600;
+    line-height: 1.6rem;
+}
+
+.ios-switch .custom-control-label::before {
+    left: -3.8rem !important;
+    width: 3rem;
+    height: 1.6rem;
+    background-color: #dee2e6;
+    border: none !important;
+    border-radius: 50rem;
+}
+
+.ios-switch .custom-control-label::after {
+    left: calc(-3.8rem + 2px) !important;
+    width: calc(1.6rem - 4px);
+    height: calc(1.6rem - 4px);
+    background-color: #fff;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+/* 6. CARD & TABLE (Nâng cấp độ hiển thị) */
+.card {
+    border: none !important;
+    border-radius: 15px !important;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.04) !important;
+}
+
+.table thead th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #f1f4f8 !important;
+    text-transform: uppercase;
+    font-size: 0.72rem;
+    letter-spacing: 0.5px;
+    color: #94a3b8;
+}

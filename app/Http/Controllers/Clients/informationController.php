@@ -9,6 +9,7 @@ use App\Models\Clients\Login;
 use Illuminate\Support\Facades\Hash;
 use App\Models\Booking;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\DB;
 
 class informationController extends Controller
 {
@@ -23,8 +24,41 @@ class informationController extends Controller
         $bookings = Booking::where('userid', $user->userid)
                     ->orderBy('bookingdate', 'desc')
                     ->get();
+        $tours_wishlist = DB::table('favorites')
+        ->join('tbl_tours', 'favorites.tourid', '=', 'tbl_tours.tourid')
+        ->where('favorites.userid', $user->userid)
+        ->select('tbl_tours.*')
+        ->paginate(6);
+        $tourIds = $tours_wishlist->pluck('tourid')->filter();
 
-        return view('Clients.infor', compact('title', 'user', 'bookings'));
+    if ($tourIds->isNotEmpty()) {
+        // 2. Lấy toàn bộ ảnh của các tour này để tránh lỗi Undefined display_image
+        $defaultImages = DB::table('tbl_images')
+            ->whereIn('tourid', $tourIds)
+            ->get()
+            ->groupBy('tourid');
+
+        // 3. Lấy thông tin giá nhỏ nhất (giống bên ToursController)
+        $schedulesInfo = DB::table('tbl_tour_schedules')
+            ->whereIn('tourid', $tourIds)
+            ->whereDate('startdate', '>=', now())
+            ->select('tourid', DB::raw('MIN(priceadult) as min_price'))
+            ->groupBy('tourid')
+            ->get()
+            ->keyBy('tourid');
+
+        // 4. Vòng lặp gán dữ liệu vào từng tour
+        foreach ($tours_wishlist as $tour) {
+            // Gán ảnh
+            $tourImage = $defaultImages->get($tour->tourid)?->first();
+            $tour->display_image = $tourImage ? $tourImage->imageurl : 'default.jpg';
+
+            // Gán giá
+            $schedule = $schedulesInfo->get($tour->tourid);
+            $tour->min_price = $schedule ? $schedule->min_price : ($tour->priceadult ?? 0);
+        }
+    }
+        return view('Clients.infor', compact('title', 'user', 'bookings', 'tours_wishlist'));
     }
 
     public function update(Request $request)

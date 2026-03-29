@@ -251,6 +251,24 @@ class TourController extends Controller
         return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
     }
 }
+public function toggleAvailability(Request $request)
+{
+    try {
+        $tour = Tour::findOrFail($request->id);
+        $tour->availability = $request->status;
+        $tour->save();
+
+        return response()->json([
+            'success' => true, 
+            'message' => 'Cập nhật trạng thái thành công!'
+        ]);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false, 
+            'message' => 'Có lỗi xảy ra: ' . $e->getMessage()
+        ], 500);
+    }
+}
 
 public function deleteSchedule($id)
 {

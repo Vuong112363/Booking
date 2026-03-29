@@ -34,7 +34,7 @@
                             <div class="icon"><i class="fas fa-envelope"></i></div>
                             <div class="content">
                                 <h5>Hỗ trợ & Trợ giúp</h5>
-                                <div class="text"><i class="far fa-envelope"></i> <a href="mailto:support@gmail.com">support@gmail.com</a></div>
+                                <a href="mailto:{{ get_setting('contact_email', 'support@goviet.com') }}" class="text-muted hover-info">{{ get_setting('contact_email', 'support@goviet.com') }}</a>
                             </div>
                         </div>
                     </div>
@@ -43,7 +43,9 @@
                             <div class="icon"><i class="fas fa-phone"></i></div>
                             <div class="content">
                                 <h5>Liên hệ Khẩn cấp</h5>
-                                <div class="text"><i class="far fa-phone"></i> <a href="callto:+0001234588">+000 (123) 45 88</a></div>
+                                <a href="tel:{{ preg_replace('/[^0-9+]/', '', get_setting('hotline', '+84123456789')) }}" class="fw-bold fs-4 text-warning text-decoration-none">
+                                    {{ get_setting('hotline', '+84 (123) 456 789') }}
+                                </a>
                             </div>
                         </div>
                     </div>
@@ -52,7 +54,7 @@
                             <div class="icon"><i class="fas fa-map-marker-alt"></i></div>
                             <div class="content">
                                 <h5>Chi nhánh Việt Nam</h5>
-                                <div class="text"><i class="fal fa-map-marker-alt"></i> Hà Nội, Việt Nam</div>
+                                <div class="text"><i class="fal fa-map-marker-alt"></i> Đà Nẵng, Việt Nam</div>
                             </div>
                         </div>
                     </div>
@@ -61,7 +63,7 @@
                             <div class="icon"><i class="fas fa-map-marker-alt"></i></div>
                             <div class="content">
                                 <h5>Trụ sở chính</h5>
-                                <div class="text"><i class="fal fa-map-marker-alt"></i> TP. Hồ Chí Minh, Việt Nam</div>
+                                <span>{{ get_setting('company_address', '123 Đường Lê Lợi, TP. Đà Nẵng, Việt Nam') }}</span>
                             </div>
                         </div>
                     </div>

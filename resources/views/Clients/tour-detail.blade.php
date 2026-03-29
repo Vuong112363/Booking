@@ -179,7 +179,7 @@
 
                         <h3>Maps</h3>
                         <div class="tour-map mt-30 mb-50">
-                            <iframe src="https://www.google.com/maps/embed?pb=!1m10!1m8!1m3!1d96777.16150026117!2d-74.00840582560909!3d40.71171357405996!3m2!1i1024!2i768!4f13.1!5e0!3m2!1sen!2sbd!4v1706508986625!5m2!1sen!2sbd" style="border:0; width: 100%;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                            <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3833.8025892838914!2d108.16737971020954!3d16.075730739200644!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x314218e6e72e66f5%3A0x81aceed31aec3816!2zMTM3IMSQxrDhu51uZyBOZ3V54buFbiBUaOG7iyBUaOG6rXAsIFRoYW5oIEtow6ogVMOieSwgVGhhbmggS2jDqiwgxJDDoCBO4bq1bmcgNTAwMDAsIFZp4buHdCBOYW0!5e0!3m2!1svi!2s!4v1774768769607!5m2!1svi!2s" width="950" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
                         </div>
 
                         <h3>Clients Reviews</h3>
@@ -438,7 +438,7 @@
                                             <i class="fas fa-exclamation-triangle"></i>
                                             @if($isPast) Tour đã khởi hành @elseif($isFull) Đã hết chỗ @else Đang tạm ngưng @endif
                                         </div>
-                                        <a href="tel:0352789556" class="theme-btn w-100 style-two bg-secondary text-center">Liên hệ tư vấn</a>
+                                        <a href="{{ route('contact') }}" class="theme-btn w-100 style-two bg-secondary text-center">Liên hệ tư vấn</a>
                                     @else
                                         @if(session()->has('userid'))
     <button type="submit" class="theme-btn style-two w-100 text-center">Tiếp tục đặt tour</button>

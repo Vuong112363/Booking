@@ -189,20 +189,35 @@
                                     @endif
                                 </td>
                                 
-                                <td class="text-center align-middle">
-                                    <div class="btn-group shadow-sm">
-                                        <a href="{{ route('admin.tours.edit', $tour->tourid) }}" class="btn btn-sm btn-info" title="Sửa Lịch trình & Thông tin">
-                                            <i class="fas fa-edit mr-1"></i> Sửa
-                                        </a>
-                                        <form action="{{ route('admin.tours.delete', $tour->tourid) }}" method="POST" onsubmit="return confirm('Bạn có chắc muốn xóa vĩnh viễn Tour này không?');">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" class="btn btn-sm btn-danger border-left" style="border-radius: 0 0.2rem 0.2rem 0;">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </form>
-                                    </div>
-                                </td>
+                                <td class="text-center align-middle action-column">
+    {{-- Khối trạng thái --}}
+    <div class="status-wrapper mb-3">
+        <div class="custom-control custom-switch ios-switch">
+            <input type="checkbox" class="custom-control-input toggle-availability" 
+                   id="status-{{ $tour->tourid }}" 
+                   data-id="{{ $tour->tourid }}" 
+                   {{ $tour->availability == 1 ? 'checked' : '' }}>
+            <label class="custom-control-label" for="status-{{ $tour->tourid }}">
+                <span class="status-text {{ $tour->availability == 1 ? 'text-success' : 'text-danger' }}" id="label-{{ $tour->tourid }}">
+                    {{ $tour->availability == 1 ? 'Đang mở bán' : 'Tạm ngưng' }}
+                </span>
+            </label>
+        </div>
+    </div>
+
+    {{-- Khối nút bấm --}}
+    <div class="action-buttons">
+        <a href="{{ route('admin.tours.edit', $tour->tourid) }}" class="btn btn-edit-tour" title="Chỉnh sửa">
+            <i class="fas fa-edit"></i>
+        </a>
+        <form action="{{ route('admin.tours.delete', $tour->tourid) }}" method="POST" class="d-inline">
+            @csrf @method('DELETE')
+            <button type="submit" class="btn btn-delete-tour" onclick="return confirm('Bạn có chắc muốn xóa?')">
+                <i class="fas fa-trash-alt"></i>
+            </button>
+        </form>
+    </div>
+</td>
                             </tr>
                             @empty
                             <tr>
@@ -233,67 +248,141 @@
         </div>
     </div>
 @stop
-
 @section('css')
-    <style>
-        /* Tùy chỉnh Table */
-        .custom-table thead th {
-            border: none;
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            letter-spacing: 1px;
-            padding: 15px;
-        }
-        .custom-table tbody tr { transition: all 0.2s; }
-        .custom-table tbody tr:hover { background-color: rgba(0,123,255,0.05) !important; }
-        
-        /* Tour Image */
-        .tour-img-wrapper {
-            width: 80px;
-            height: 55px;
-            overflow: hidden;
-            display: inline-block;
-            background: #eee;
-        }
-        .tour-img-wrapper img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-        
-        /* Badge UI */
-        .badge { font-weight: 500; }
-        .badge-outline-primary { color: #007bff; border-color: #007bff; background: transparent; }
-        
-        /* Title styling */
-        .tour-title-link {
-            font-size: 1rem;
-            display: block;
-            margin-bottom: 2px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 400px;
-        }
-        
-        /* Price tag */
-        .price-tag .text-danger { letter-spacing: -0.5px; }
+    @section('css')
+<style>
+    /* Fix lỗi đè chữ và căn chỉnh cột Thao tác */
+    .action-column {
+        min-width: 160px;
+        padding: 20px 10px !important;
+    }
 
-        /* Animation */
-        tbody tr { animation: fadeIn 0.5s ease; }
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-    </style>
+    /* Tùy chỉnh Switch kiểu iOS (iOS Style Switch) */
+    .ios-switch {
+        padding-left: 3.5rem !important; /* Tạo khoảng trống bên trái cho nút gạt */
+        display: inline-block;
+        text-align: left;
+    }
+
+    .ios-switch .custom-control-label {
+        padding-top: 2px;
+        cursor: pointer;
+        user-select: none;
+    }
+
+    /* Thanh ray của nút gạt */
+    .ios-switch .custom-control-label::before {
+        left: -3.5rem !important;
+        width: 2.8rem;
+        height: 1.5rem;
+        background-color: #e9ecef;
+        border: none !important;
+        border-radius: 50rem;
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        transition: background-color 0.3s ease;
+    }
+
+    /* Nút tròn di chuyển */
+    .ios-switch .custom-control-label::after {
+        left: calc(-3.5rem + 2px) !important;
+        width: calc(1.5rem - 4px);
+        height: calc(1.5rem - 4px);
+        background-color: #fff;
+        border-radius: 50%;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        transition: transform 0.3s ease;
+    }
+
+    /* Khi ở trạng thái ON */
+    .ios-switch .custom-control-input:checked ~ .custom-control-label::before {
+        background-color: #28a745;
+    }
+
+    .ios-switch .custom-control-input:checked ~ .custom-control-label::after {
+        transform: translateX(1.3rem);
+    }
+
+    /* Text trạng thái */
+    .status-text {
+        font-size: 0.85rem;
+        font-weight: 700;
+        margin-left: 5px;
+        display: inline-block;
+        min-width: 80px;
+    }
+
+    /* Style cho các nút Sửa/Xóa */
+    .action-buttons .btn {
+        width: 38px;
+        height: 38px;
+        padding: 0;
+        line-height: 38px;
+        border-radius: 8px;
+        margin: 0 3px;
+        transition: all 0.2s;
+        border: 1px solid #eee;
+        background: #fff;
+    }
+
+    .btn-edit-tour { color: #17a2b8; }
+    .btn-edit-tour:hover { background: #17a2b8 !important; color: #fff !important; transform: translateY(-2px); }
+
+    .btn-delete-tour { color: #dc3545; }
+    .btn-delete-tour:hover { background: #dc3545 !important; color: #fff !important; transform: translateY(-2px); }
+</style>
 @stop
 
+
 @section('js')
+    @section('js')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script>
         $(function () {
+            // 1. Xử lý nút gạt Bật/Tắt
+            $('.toggle-availability').change(function() {
+                let status = $(this).prop('checked') ? 1 : 0;
+                let tourId = $(this).data('id');
+                let label = $('#label-' + tourId);
+                let checkbox = $(this);
+
+                $.ajax({
+                    type: "POST",
+                    dataType: "json",
+                    url: "{{ route('admin.tours.toggle') }}",
+                    data: {
+                        '_token': '{{ csrf_token() }}',
+                        'status': status,
+                        'id': tourId
+                    },
+                    success: function(data) {
+                        // Cập nhật nhãn chữ
+                        if(status == 1) {
+                            label.text('Đang mở bán').removeClass('text-danger').addClass('text-success');
+                        } else {
+                            label.text('Tạm ngưng').removeClass('text-success').addClass('text-danger');
+                        }
+                        
+                        // Hiện thông báo Toast xịn
+                        Swal.mixin({
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 2000
+                        }).fire({
+                            icon: 'success',
+                            title: data.message
+                        });
+                    },
+                    error: function() {
+                        // Nếu lỗi thì gạt ngược nút lại và báo lỗi
+                        checkbox.prop('checked', !checkbox.prop('checked'));
+                        alert('Không thể kết nối đến máy chủ!');
+                    }
+                });
+            });
+
+            // 2. Tooltip & Auto close alert cũ của bạn
             $('[data-toggle="tooltip"]').tooltip();
-            
-            // Auto close alert
             window.setTimeout(function() {
                 $(".alert").fadeTo(500, 0).slideUp(500, function(){
                     $(this).remove(); 
