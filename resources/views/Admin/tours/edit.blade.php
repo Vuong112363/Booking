@@ -240,7 +240,63 @@
                     </div>
                 @endforeach
             </div>
+            <div class="row mt-4">
+    {{-- Cột: Dịch vụ bao gồm --}}
+    <div class="col-md-6 border-right">
+        <h6 class="text-bold text-success"><i class="fa fa-check-circle"></i> Dịch vụ bao gồm</h6>
+        
+        {{-- Ô nhập nhanh --}}
+        <div class="form-group mb-2">
+            <textarea id="bulk-include" class="form-control form-control-sm" rows="2" placeholder="Dán danh sách tại đây, mỗi dịch vụ 1 dòng rồi nhấn Enter..."></textarea>
+            <button type="button" class="btn btn-xs btn-info mt-1" onclick="handleBulkAdd('bulk-include', 'box-includes', 'tour_includes[]')">
+                <i class="fas fa-bolt"></i> Thêm hàng loạt
+            </button>
         </div>
+
+        <div id="box-includes" class="mb-2 shadow-sm p-2 bg-white rounded" style="max-height: 300px; overflow-y: auto;">
+            @if(!empty($tour->tour_includes) && is_array($tour->tour_includes))
+                @foreach($tour->tour_includes as $item)
+                    <div class="input-group mb-2">
+                        <input type="text" name="tour_includes[]" class="form-control" value="{{ $item }}">
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+                @endforeach
+            @endif
+        </div>
+        <button type="button" class="btn btn-outline-success btn-sm btn-block" onclick="addNewRow('box-includes', 'tour_includes[]')">+ Thêm 1 dòng</button>
+    </div>
+
+    {{-- Cột: Không bao gồm --}}
+    <div class="col-md-6">
+        <h6 class="text-bold text-danger"><i class="fa fa-times-circle"></i> Không bao gồm</h6>
+        
+        {{-- Ô nhập nhanh --}}
+        <div class="form-group mb-2">
+            <textarea id="bulk-exclude" class="form-control form-control-sm" rows="2" placeholder="Dán danh sách chi phí không bao gồm tại đây..."></textarea>
+            <button type="button" class="btn btn-xs btn-info mt-1" onclick="handleBulkAdd('bulk-exclude', 'box-excludes', 'tour_excludes[]')">
+                <i class="fas fa-bolt"></i> Thêm hàng loạt
+            </button>
+        </div>
+
+        <div id="box-excludes" class="mb-2 shadow-sm p-2 bg-white rounded" style="max-height: 300px; overflow-y: auto;">
+            @if(!empty($tour->tour_excludes) && is_array($tour->tour_excludes))
+                @foreach($tour->tour_excludes as $item)
+                    <div class="input-group mb-2">
+                        <input type="text" name="tour_excludes[]" class="form-control" value="{{ $item }}">
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+                @endforeach
+            @endif
+        </div>
+        <button type="button" class="btn btn-outline-danger btn-sm btn-block" onclick="addNewRow('box-excludes', 'tour_excludes[]')">+ Thêm 1 dòng</button>
+    </div>
+</div>
+        </div>
+
 
         <div class="card-footer bg-white text-right">
             <a href="{{ route('admin.tours.index') }}" class="btn btn-default mr-2 btn-lg">Hủy bỏ</a>
@@ -248,6 +304,7 @@
         </div>
     </form>
 </div>
+
 
 {{-- MODAL THÊM LỊCH TRÌNH --}}
 <div class="modal fade" id="modal-add-schedule" tabindex="-1" role="dialog" aria-hidden="true">
@@ -422,4 +479,47 @@
             $('#pickup-container').append(html);
         }
     </script>
+<script>
+// Hàm thêm hàng loạt từ Textarea
+function handleBulkAdd(textareaId, containerId, inputName) {
+    const textarea = document.getElementById(textareaId);
+    const container = document.getElementById(containerId);
+    const lines = textarea.value.split('\n'); // Tách theo dòng
+
+    lines.forEach(line => {
+        const cleanLine = line.trim();
+        if (cleanLine !== "") {
+            const div = document.createElement('div');
+            div.className = 'input-group mb-2 animate__animated animate__fadeInIn'; // Thêm hiệu ứng nếu có animate.css
+            div.innerHTML = `
+                <input type="text" name="${inputName}" class="form-control" value="${cleanLine}">
+                <div class="input-group-append">
+                    <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.parentElement.remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+    });
+
+    textarea.value = ""; // Xóa trắng textarea sau khi thêm xong
+}
+
+// Giữ lại hàm thêm 1 dòng cũ cho nhu cầu nhập lẻ
+function addNewRow(containerId, inputName) {
+    const container = document.getElementById(containerId);
+    const div = document.createElement('div');
+    div.className = 'input-group mb-2';
+    div.innerHTML = `
+        <input type="text" name="${inputName}" class="form-control" placeholder="Nhập nội dung...">
+        <div class="input-group-append">
+            <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.parentElement.remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    container.appendChild(div);
+}
+</script>
 @stop

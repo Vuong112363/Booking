@@ -198,7 +198,9 @@ Route::prefix('users')->name('users.')->controller(UserController::class)->group
     Route::post('categories-store', [AdminBlogController::class, 'storeCategory'])->name('categories.store');
     Route::delete('categories-delete', [AdminBlogController::class, 'destroyCategory'])->name('categories.delete');
 });
-
+Route::get('/dieu-khoan-chinh-sach', function () {
+    return view('clients.terms-and-policies');
+})->name('terms');
 /*
 |--------------------------------------------------------------------------
 | 3. SYSTEM ROUTES

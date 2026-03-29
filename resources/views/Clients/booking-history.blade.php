@@ -585,14 +585,28 @@
                                             <div class="modal-body">
                                                 <p class="mb-3">Bạn đang yêu cầu hủy chuyến đi <strong>{{ $item->title }}</strong>.</p>
                                                 
-                                                <div class="bg-light p-3 rounded mb-3 border">
-                                                    <p class="text-danger fw-bold mb-2 small"><i class="fa-solid fa-file-invoice-dollar mr-1"></i> Chính sách hoàn tiền:</p>
-                                                    <ul class="small text-muted mb-0 pl-3">
-                                                        <li>Báo trước <strong>5 ngày</strong>: Hoàn 100% tiền cọc.</li>
-                                                        <li>Báo trước <strong>2-5 ngày</strong>: Hoàn 50% tiền cọc.</li>
-                                                        <li>Báo dưới <strong>2 ngày</strong>: Không hoàn tiền.</li>
-                                                    </ul>
-                                                </div>
+                                                {{-- Khung chính sách (Đã sửa lỗi không hiển thị) --}}
+<div class="bg-light p-3 rounded mb-4 border border-danger-subtle" style="display: block !important;">
+    <p class="text-danger fw-bold mb-2 small" style="opacity: 1 !important;">
+        <i class="fa-solid fa-file-invoice-dollar me-1"></i> Chính sách hoàn tiền:
+    </p>
+    
+    {{-- Chuyển từ thẻ ul/li sang div để không bị CSS của Theme ẩn đi --}}
+    <div class="small text-dark mt-2" style="font-family: Arial, sans-serif !important;">
+        <div class="mb-2 d-flex align-items-start">
+            <i class="fas fa-check-circle text-success mt-1 me-2" style="width: 15px;"></i> 
+            <span>Báo trước <strong>5 ngày</strong>: Hoàn 100% tiền cọc.</span>
+        </div>
+        <div class="mb-2 d-flex align-items-start">
+            <i class="fas fa-exclamation-circle text-warning mt-1 me-2" style="width: 15px;"></i> 
+            <span>Báo trước <strong>2-5 ngày</strong>: Hoàn 50% tiền cọc.</span>
+        </div>
+        <div class="d-flex align-items-start">
+            <i class="fas fa-times-circle text-danger mt-1 me-2" style="width: 15px;"></i> 
+            <span>Báo dưới <strong>2 ngày</strong>: Không hoàn tiền.</span>
+        </div>
+    </div>
+</div>
                                                 
                                                 <div class="form-group mb-3">
                                                     <label class="form-label font-weight-bold">Lý do hủy chuyến <span class="text-danger">*</span></label>

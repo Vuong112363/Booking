@@ -213,23 +213,14 @@
                         <div class="mb-3">
                             <input type="radio" name="paymentmethod" value="momo" id="momo" class="d-none" required>
                             <label for="momo">
-                                <img src="https://upload.wikimedia.org/wikipedia/vi/f/fe/MoMo_Logo.png" width="35">
+                                <img src="{{ asset('clients/assets/images/checkout/momo.png') }}" width="35">
                                 <div class="ml-4">
                                     <span class="d-block font-weight-bold">Thanh toán Ví MoMo</span>
                                     <small class="text-muted">An toàn, nhanh chóng, cọc 30% tức thì</small>
                                 </div>
                             </label>
                         </div>
-                        <div class="mb-3">
-                            <input type="radio" name="paymentmethod" value="paypal" id="paypal" class="d-none">
-                            <label for="paypal">
-                                <img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg" width="65">
-                                <div class="ml-4">
-                                    <span class="d-block font-weight-bold">Cổng PayPal</span>
-                                    <small class="text-muted">Hỗ trợ thẻ quốc tế và ví PayPal</small>
-                                </div>
-                            </label>
-                        </div>
+                        
                         <div>
                             <input type="radio" name="paymentmethod" value="cash" id="cash" class="d-none">
                             <label for="cash">
@@ -314,7 +305,7 @@
                                 <p class="mb-3">Bằng cách nhấp chuột vào nút "ĐỒNG Ý" dưới đây, Khách hàng đồng ý rằng các điều kiện điều khoản này sẽ được áp dụng. Vui lòng đọc kỹ điều kiện điều khoản trước khi lựa chọn sử dụng dịch vụ của <strong>GoViet Tours</strong>.</p>
                                 <div class="custom-control custom-checkbox">
                                     <input type="checkbox" class="custom-control-input" id="agree" name="agree" required>
-                                    <label class="custom-control-label font-weight-bold" for="agree">Tôi đã đọc và đồng ý với <a href="#" target="_blank" class="text-primary underline">Điều khoản dịch vụ và chính sách thanh toán</a></label>
+                                    <label class="custom-control-label font-weight-bold" for="agree">Tôi đã đọc và đồng ý với <a href="{{ route('terms') }}" target="_blank" class="text-primary underline">Điều khoản dịch vụ và chính sách thanh toán</a></label>
                                 </div>
                             </div>
                             <button type="submit" class="booking-btn mt-4 shadow-lg">

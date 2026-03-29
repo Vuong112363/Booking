@@ -61,6 +61,8 @@ class TourController extends Controller
             'title'      => 'required|max:255',
             'domain'     => 'required|in:b,t,n',
             'image_main' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+            'tour_includes' => 'nullable|array',
+        'tour_excludes' => 'nullable|array',
         ]);
 
         DB::beginTransaction();
@@ -110,6 +112,8 @@ class TourController extends Controller
             'title'      => 'required|max:255',
             'domain'     => 'required|in:b,t,n',
             'image_main' => 'nullable|image|max:2048',
+            'tour_includes' => 'nullable|array',
+        'tour_excludes' => 'nullable|array',
         ]);
 
         DB::beginTransaction();
@@ -150,6 +154,8 @@ class TourController extends Controller
         $tour->availability   = $request->availability ?? 1;
         $tour->description    = $request->description;
         $tour->time           = $request->time;
+        $tour->tour_includes  = $request->tour_includes; 
+    $tour->tour_excludes  = $request->tour_excludes;
     }
 
     private function handleTimeline($tourid, $request) {

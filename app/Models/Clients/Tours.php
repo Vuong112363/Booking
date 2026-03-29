@@ -27,7 +27,14 @@ class Tours extends Model
         'startdate', 
         'enddate', 
         'time',
+        'tour_includes',
+        'tour_excludes',
         'images'
+    ];
+    protected $casts = [
+        'tour_includes' => 'array',
+        'tour_excludes' => 'array',
+
     ];
 
     /**
@@ -64,9 +71,7 @@ public function getAllTours()
     public function getTourDetail($id)
     {
         // Lấy thông tin cơ bản của tour
-        $getTourDetail = DB::table($this->table)
-            ->where('tourid', $id) // Đã chuẩn hóa thành chữ thường 'tourid'
-            ->first();
+        $getTourDetail = self::where('tourid', $id)->first();
 
         // Nếu tour tồn tại thì mới query tiếp ảnh và lịch trình
         if ($getTourDetail) {

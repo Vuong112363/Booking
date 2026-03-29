@@ -84,76 +84,13 @@
         <section class="tour-details-page pb-100">
             <div class="container">
                 <div class="row">
-                    <div class="col-lg-8">
-                        <div class="tour-details-content">
-                            <h3>Khám Phá Tour</h3>
-                            <p>{!! $tourDetail->description !!}</p>
-                            <div class="row pb-55">
-                                <div class="col-md-6">
-                                    <div class="tour-include-exclude mt-30">
-                                        <h5>Dịch vụ bao gồm</h5>
-                                        <ul class="list-style-one check mt-25">
-                                            <li><i class="far fa-check"></i> Đưa đón tận nơi</li>
-                                            <li><i class="far fa-check"></i> 1 bữa ăn mỗi ngày</li>
-                                            <li><i class="far fa-check"></i> Tiệc tối trên du thuyền & chương trình âm nhạc</li>
-                                            <li><i class="far fa-check"></i> Tham quan 7 địa điểm nổi bật trong thành phố</li>
-                                            <li><i class="far fa-check"></i> Nước suối miễn phí trên xe</li>
-                                            <li><i class="far fa-check"></i> Xe du lịch cao cấp</li>
-                                        </ul>
-                                    </div>
-                                </div>
-
-                                <div class="col-md-6">
-                                    <div class="tour-include-exclude mt-30">
-                                        <h5>Không bao gồm</h5>
-                                        <ul class="list-style-one mt-25">
-                                            <li><i class="far fa-times"></i> Tiền tip (boa)</li>
-                                            <li><i class="far fa-times"></i> Đưa đón tại khách sạn</li>
-                                            <li><i class="far fa-times"></i> Ăn trưa, đồ ăn & thức uống ngoài chương trình</li>
-                                            <li><i class="far fa-times"></i> Nâng cấp tùy chọn (dịch vụ bổ sung)</li>
-                                            <li><i class="far fa-times"></i> Các dịch vụ phát sinh thêm</li>
-                                            <li><i class="far fa-times"></i> Bảo hiểm du lịch</li>
-                                        </ul>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <h3>Lịch trình</h3>
-                        <div class="tour-activities mt-30 mb-45">
-                            <div class="tour-activity-item">
-                                <i class="flaticon-hiking"></i>
-                                <b>Hiking</b>
-                            </div>
-                            <div class="tour-activity-item">
-                                <i class="flaticon-fishing"></i>
-                                <b>Fishing</b>
-                            </div>
-                            <div class="tour-activity-item">
-                                <i class="flaticon-man"></i>
-                                <b>Kayak shooting</b>
-                            </div>
-                            <div class="tour-activity-item">
-                                <i class="flaticon-kayak-1"></i>
-                                <b>Kayak</b>
-                            </div>
-                            <div class="tour-activity-item">
-                                <i class="flaticon-bonfire"></i>
-                                <b>Campfire</b>
-                            </div>
-                            <div class="tour-activity-item">
-                                <i class="flaticon-flashlight"></i>
-                                <b>Night Exploring</b>
-                            </div>
-                            <div class="tour-activity-item">
-                                <i class="flaticon-cycling"></i>
-                                <b>Biking</b>
-                            </div>
-                            <div class="tour-activity-item">
-                                <i class="flaticon-meditation"></i>
-                                <b>Yoga</b>
-                            </div>
-                        </div>
+    <div class="col-lg-8">
+        <div class="tour-details-content">
+            <h3>Khám Phá Tour</h3>
+            <div class="description-content mb-40">
+                {!! $tourDetail->description !!}
+            </div>
+    
 
                         <h3>Lịch trình chi tiết</h3>
                         <div class="accordion-two mt-25 mb-60" id="faq-accordion-two">
@@ -175,14 +112,126 @@
                             </div>
                             @endforeach
                         </div>
+                        <div class="row pb-55">
+                {{-- Dịch vụ bao gồm --}}
+                <div class="col-md-6">
+                    <div class="tour-include-exclude mt-30 p-4 shadow-sm bg-white border-top border-success border-4 rounded h-100">
+                        <h5 class="mb-0"><i class="fas fa-check-circle text-success me-2"></i> Dịch vụ bao gồm</h5>
+                        <ul class="list-style-one check mt-25">
+                            @if(!empty($tourDetail->tour_includes))
+                                @foreach($tourDetail->tour_includes as $item)
+                                    <li><i class="far fa-check text-success"></i> {{ $item }}</li>
+                                @endforeach
+                            @else
+                                <li class="text-muted italic">Thông tin đang được cập nhật...</li>
+                            @endif
+                        </ul>
+                    </div>
+                </div>
 
+                {{-- Không bao gồm --}}
+                <div class="col-md-6">
+                    <div class="tour-include-exclude mt-30 p-4 shadow-sm bg-white border-top border-danger border-4 rounded h-100">
+                        <h5 class="mb-0"><i class="fas fa-times-circle text-danger me-2"></i> Không bao gồm</h5>
+                        <ul class="list-style-one mt-25">
+                            @if(!empty($tourDetail->tour_excludes))
+                                @foreach($tourDetail->tour_excludes as $item)
+                                    <li><i class="far fa-times text-danger"></i> {{ $item }}</li>
+                                @endforeach
+                            @else
+                                <li class="text-muted italic">Thông tin đang được cập nhật...</li>
+                            @endif
+                        </ul>
+                    </div>
+                </div>
+            </div> {{-- End row pb-55 --}}
+            
+        </div> {{-- End tour-details-content --}}
+                        <div class="tour-details-tabs mt-60">
+    <ul class="nav nav-tabs border-0 mb-30" id="tourTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <button class="nav-link active fw-bold px-4" id="policy-tab" data-bs-toggle="tab" data-bs-target="#policy" type="button" role="tab">Chính sách & Quy định</button>
+        </li>
+        <li class="nav-item" role="presentation">
+            <button class="nav-link fw-bold px-4" id="note-tab" data-bs-toggle="tab" data-bs-target="#note" type="button" role="tab">Lưu ý khi đi Tour</button>
+        </li>
+    </ul>
+
+    <div class="tab-content p-4 bg-white shadow-sm rounded border shadow-sm" id="tourTabContent">
+        {{-- TAB 1: CHÍNH SÁCH --}}
+        <div class="tab-pane fade show active" id="policy" role="tabpanel">
+            <div class="policy-item mb-4">
+                <h5 class="text-primary mb-3"><i class="fas fa-child me-2"></i> Chính sách giá vé trẻ em</h5>
+                <ul class="list-style-two">
+                    <li><strong>Trẻ em dưới 05 tuổi:</strong> Miễn phí vé tour (ngủ chung giường với bố mẹ, tự lo chi phí ăn uống và vé tham quan nếu có phát sinh). Hai người lớn chỉ kèm 1 trẻ em miễn phí, trẻ em thứ 2 tính 50% giá vé.</li>
+                    <li><strong>Trẻ em từ 10 tuổi trở lên:</strong> Tính 75% giá tour (có suất ăn riêng, ghế ngồi riêng trên xe, ngủ chung giường với bố mẹ).</li>
+                    
+                </ul>
+            </div>
+
+            <div class="policy-item mb-4 border-top pt-3">
+                <h5 class="text-danger mb-3"><i class="fas fa-file-invoice-dollar me-2"></i> Điều kiện hoàn/hủy tour</h5>
+                <div class="table-responsive">
+                    <table class="table table-sm table-bordered">
+                        <thead class="bg-light">
+                            <tr class="text-center">
+                                <th>Thời điểm thông báo hủy</th>
+                                <th>Phí phạt (% trên tổng giá tour và không bao gồm dịch vụ khác )</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr><td>Ngay sau khi đặt cọc / Trước 5 ngày</td> <td class="text-center text-danger font-weight-bold">0%</td></tr>
+                            <tr><td>Từ 3 - 5 ngày trước khởi hành</td> <td class="text-center text-danger font-weight-bold">50%</td></tr>
+                            <tr><td>Trong vòng 02 ngày trước khởi hành</td> <td class="text-center text-danger font-weight-bold">100%</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+                <p class="small text-muted italic mb-0">* Lưu ý: Thời gian hủy tour được tính cho ngày làm việc (không tính Thứ 7, Chủ Nhật và các ngày Lễ Tết).</p>
+                <p class="small text-muted italic">* Đối với các tour Lễ/Tết, chính sách phạt hủy có thể áp dụng mức nghiêm ngặt hơn.</p>
+            </div>
+        </div>
+
+        {{-- TAB 2: LƯU Ý --}}
+        <div class="tab-pane fade" id="note" role="tabpanel">
+            <h5 class="text-warning mb-3"><i class="fas fa-info-circle me-2"></i> Thông tin lưu ý quan trọng</h5>
+            <div class="row">
+                <div class="col-md-6">
+                    <ul class="list-style-three">
+                        <li><strong>Tập trung & Đón khách:</strong> Quý khách vui lòng có mặt tại điểm hẹn trước 15-30 phút. Điểm đón cụ thể sẽ được cập nhật khi tư vấn hoặc chốt đoàn.</li>
+                        <li><strong>Giấy tờ tùy thân:</strong> Cần mang theo bản gốc CMND/CCCD/Hộ chiếu (còn hạn trên 6 tháng). Trẻ em đi kèm mang theo bản sao Giấy khai sinh có mộc đỏ.</li>
+                        <li><strong>Quy định lưu trú:</strong> Giờ nhận phòng khách sạn thường là sau 14h00 và giờ trả phòng là trước 12h00.</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <ul class="list-style-three">
+                        <li><strong>Hành lý & Tư trang:</strong> Mang theo hành lý gọn nhẹ, quần áo phù hợp với thời tiết điểm đến. Quý khách tự bảo quản tài sản, tư trang có giá trị.</li>
+                        <li><strong>Dinh dưỡng:</strong> Không mang thực phẩm có mùi, đồ uống có cồn từ bên ngoài vào nhà hàng/khách sạn để tránh bị tính phí phụ thu.</li>
+                        <li><strong>Sức khỏe:</strong> Quý khách có bệnh lý nền vui lòng mang theo thuốc đặc trị cá nhân và thông báo trước cho công ty.</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="policy-item mt-3 border-top pt-3">
+                <h5 class="text-secondary mb-2 fs-6"><i class="fas fa-shield-alt me-2"></i> Điều khoản bất khả kháng</h5>
+                <p class="small text-muted text-justify">
+                    Trong những trường hợp khách quan như: khủng bố, thiên tai (bão lũ, động đất...), dịch bệnh, hoặc do có sự cố, thay đổi lịch trình của các phương tiện vận chuyển công cộng (máy bay, tàu hỏa...), công ty sẽ giữ quyền thay đổi lộ trình, ngày giờ khởi hành hoặc hủy tour nhằm đảm bảo sự an toàn cho khách hàng. Công ty sẽ hoàn trả lại chi phí chưa sử dụng thực tế và không chịu trách nhiệm bồi thường thêm bất kỳ thiệt hại nào khác.
+                </p>
+            </div>
+
+            <div class="alert alert-info mt-3 py-2 small mb-0">
+                <i class="fas fa-headset me-2"></i> Trước ngày khởi hành 01-02 ngày, Hướng dẫn viên sẽ gọi điện thoại hoặc gửi tin nhắn để thông báo chi tiết biển số xe, số điện thoại liên lạc và dặn dò các thông tin cuối cùng.
+            </div>
+        </div>
+    </div>
+</div>
 
                         <h3>Maps</h3>
                         <div class="tour-map mt-30 mb-50">
                             <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3833.8025892838914!2d108.16737971020954!3d16.075730739200644!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x314218e6e72e66f5%3A0x81aceed31aec3816!2zMTM3IMSQxrDhu51uZyBOZ3V54buFbiBUaOG7iyBUaOG6rXAsIFRoYW5oIEtow6ogVMOieSwgVGhhbmggS2jDqiwgxJDDoCBO4bq1bmcgNTAwMDAsIFZp4buHdCBOYW0!5e0!3m2!1svi!2s!4v1774768769607!5m2!1svi!2s" width="950" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
                         </div>
-
-                        <h3>Clients Reviews</h3>
+                        
+                    
+                        <h3>Đánh giá của khách hàng</h3>
                         <div class="clients-reviews bgc-black mt-30 mb-60">
                             <div class="left">
                                 <b>{{ $averageRating }}</b>
@@ -212,7 +261,7 @@
                                 @endfor
                             </div>
                         </div>
-                        <h3>Clients Comments ({{ $totalReviews }})</h3>
+                        <h3>Ý kiến của khách hàng ({{ $totalReviews }})</h3>
                         <div class="comments mt-30 mb-60">
                             
                             @forelse($reviews as $review)
@@ -383,12 +432,45 @@
         </li>
         @endif
     </ul>
+
+    
 </div>
+
 
 <style>
 .hover-bg:hover {
     background-color: #f8f9fa;
     transition: 0.3s;
+}
+.tour-details-tabs .nav-tabs .nav-link {
+    border: none;
+    color: #666;
+    background: #f8f9fa;
+    margin-right: 10px;
+    border-radius: 5px;
+    transition: 0.3s;
+}
+.tour-details-tabs .nav-tabs .nav-link.active {
+    background: #ff6a00; /* Màu thương hiệu GoViet của bạn */
+    color: white;
+}
+.list-style-two, .list-style-three {
+    list-style: none;
+    padding-left: 0;
+}
+.list-style-two li::before {
+    content: "\f058";
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    color: #28a745;
+    margin-right: 10px;
+}
+.list-style-three li::before {
+    content: "\f0a1";
+    font-family: "Font Awesome 5 Free";
+    font-weight: 900;
+    color: #ffc107;
+    margin-right: 10px;
 }
 </style>
                             

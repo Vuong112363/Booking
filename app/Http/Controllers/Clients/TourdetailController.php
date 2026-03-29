@@ -70,6 +70,7 @@ $reviews = Review::with('user')
             'ratingCounts', 
             'ratingPercentages', 
             'hasBooked', // Truyền biến này ra View
+            
             'schedules'
         ));
     }

@@ -240,68 +240,78 @@ class BookingController extends Controller
     // =========================
     // MOMO PAYMENT
     // =========================
-    public function momo_payment($bookingId)
-{
-    $booking = DB::table('tbl_bookings')->where('bookingid', $bookingId)->first();
+public function momo_payment($bookingId)
+    {
+        $booking = DB::table('tbl_bookings')->where('bookingid', $bookingId)->first();
 
-    if (!$booking) return back()->with('error', 'Không tồn tại booking');
-    if ($booking->paymentstatus == 'paid') return back()->with('error', 'Đã thanh toán rồi.');
+        if (!$booking) return back()->with('error', 'Không tồn tại booking');
+        if ($booking->paymentstatus == 'paid') return back()->with('error', 'Đã thanh toán rồi.');
 
-    $amount = ($booking->paymentstatus == 'unpaid') ? (int)$booking->deposit_amount : (int)($booking->totalprice - $booking->paid_amount);
-    $orderInfo = "Thanh toan tour #" . $bookingId;
+        $amount = ($booking->paymentstatus == 'unpaid') ? (int)$booking->deposit_amount : (int)($booking->totalprice - $booking->paid_amount);
+        $orderInfo = "Thanh toan tour #" . $bookingId;
 
-    if ($amount <= 0) return back()->with('error', 'Số tiền không hợp lệ.');
+        if ($amount <= 0) return back()->with('error', 'Số tiền không hợp lệ.');
 
-    // --- LẤY THÔNG TIN TỪ DATABASE QUA HELPER get_setting ---
-    // Nếu trong DB chưa có, nó sẽ lấy giá trị mặc định ở tham số thứ 2
-    $endpoint    = get_setting('momo_environment', 'https://test-payment.momo.vn/v2/gateway/api/create');
-    $partnerCode = get_setting('momo_partner_code', 'MOMO3PZW20250404_TEST');
-    $accessKey   = get_setting('momo_access_key', 'aCkRGYFnwrlAxV6O');
-    $secretKey   = get_setting('momo_secret_key', 'BfyQQNQty1udFv5UNh4WoOrHTbK2HGYD');
-    
-    $orderId     = time() . "_" . $bookingId;
-    $redirectUrl = url('/momo-return/' . $bookingId);
-    $ipnUrl      = url('/momo-return/' . $bookingId);
+        // --- LẤY THÔNG TIN TỪ DATABASE QUA HELPER get_setting ---
+        $endpoint    = get_setting('momo_environment', 'https://test-payment.momo.vn/v2/gateway/api/create');
+        $partnerCode = get_setting('momo_partner_code', 'MOMO3PZW20250404_TEST');
+        $accessKey   = get_setting('momo_access_key', 'aCkRGYFnwrlAxV6O');
+        $secretKey   = get_setting('momo_secret_key', 'BfyQQNQty1udFv5UNh4WoOrHTbK2HGYD');
+        
+        $orderId     = time() . "_" . $bookingId;
+        $redirectUrl = url('/momo-return/' . $bookingId);
+        $ipnUrl      = url('/momo-return/' . $bookingId);
 
-    // Xây dựng chuỗi ký tự Hash
-    $rawHash = "accessKey=" . $accessKey . 
-               "&amount=" . $amount . 
-               "&extraData=" . 
-               "&ipnUrl=" . $ipnUrl . 
-               "&orderId=" . $orderId . 
-               "&orderInfo=" . $orderInfo . 
-               "&partnerCode=" . $partnerCode . 
-               "&redirectUrl=" . $redirectUrl . 
-               "&requestId=" . $orderId . 
-               "&requestType=captureWallet";
+        // Xây dựng chuỗi ký tự Hash
+        $rawHash = "accessKey=" . $accessKey . 
+                   "&amount=" . $amount . 
+                   "&extraData=" . 
+                   "&ipnUrl=" . $ipnUrl . 
+                   "&orderId=" . $orderId . 
+                   "&orderInfo=" . $orderInfo . 
+                   "&partnerCode=" . $partnerCode . 
+                   "&redirectUrl=" . $redirectUrl . 
+                   "&requestId=" . $orderId . 
+                   "&requestType=captureWallet";
 
-    $signature = hash_hmac("sha256", $rawHash, $secretKey);
+        $signature = hash_hmac("sha256", $rawHash, $secretKey);
 
-    $data = [
-        'partnerCode' => $partnerCode,
-        'requestId'   => $orderId,
-        'amount'      => $amount,
-        'orderId'     => $orderId,
-        'orderInfo'   => $orderInfo,
-        'redirectUrl' => $redirectUrl,
-        'ipnUrl'      => $ipnUrl,
-        'requestType' => "captureWallet",
-        'extraData'   => "",
-        'signature'   => $signature,
-        'lang'        => 'vi'
-    ];
+        $data = [
+            'partnerCode' => $partnerCode,
+            'requestId'   => $orderId,
+            'amount'      => $amount,
+            'orderId'     => $orderId,
+            'orderInfo'   => $orderInfo,
+            'redirectUrl' => $redirectUrl,
+            'ipnUrl'      => $ipnUrl,
+            'requestType' => "captureWallet",
+            'extraData'   => "",
+            'signature'   => $signature,
+            'lang'        => 'vi'
+        ];
 
-    $result = $this->execPostRequest($endpoint, json_encode($data));
-    $jsonResult = json_decode($result, true);
+        $result = $this->execPostRequest($endpoint, json_encode($data));
+        
+        // 1. KIỂM TRA MẤT MẠNG HOẶC TIMEOUT
+        if (empty($result)) {
+            \Log::error("MoMo Payment Error: Không thể kết nối API (Mất mạng hoặc Timeout).", ['request_data' => $data]);
+            return back()->with('error', 'Hệ thống đang gián đoạn kết nối. Vui lòng kiểm tra lại mạng hoặc thử lại sau.');
+        }
 
-    if (!isset($jsonResult['payUrl'])) {
-        // Ghi log lỗi nếu không lấy được link thanh toán để dễ debug
-        \Log::error("MoMo Payment Error: ", $jsonResult);
-        return back()->with('error', 'Lỗi kết nối với MoMo. Vui lòng thử lại sau.');
+        $jsonResult = json_decode($result, true);
+
+        // 2. KIỂM TRA DỮ LIỆU JSON HỢP LỆ VÀ CÓ PAY URL KHÔNG
+        if ($jsonResult === null || !isset($jsonResult['payUrl'])) {
+            
+            // Xử lý biến context thành mảng để Log::error không bị lỗi "must be of type array"
+            $logContext = is_array($jsonResult) ? $jsonResult : ['raw_response' => $result];
+            
+            \Log::error("MoMo Payment Error: Từ chối tạo giao dịch", $logContext);
+            return back()->with('error', 'Không thể khởi tạo giao dịch với MoMo lúc này. Vui lòng thử lại.');
+        }
+
+        return redirect($jsonResult['payUrl']);
     }
-
-    return redirect($jsonResult['payUrl']);
-}
 
     private function execPostRequest($url,$data)
     {
