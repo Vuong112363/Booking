@@ -144,95 +144,142 @@
         </div>
     </div>
 
-    {{-- PHẦN 4: ĐƠN HÀNG GẦN ĐÂY & TOP TOUR --}}
-    <div class="row mt-2">
-        <div class="col-lg-8">
-            <div class="card shadow-sm border-0 rounded-lg mb-4">
+    {{-- ======================================================= --}}
+    {{-- KHỐI 4: TOP TOUR BÁN CHẠY & ĐƠN HÀNG MỚI (TRỰC QUAN HƠN) --}}
+    {{-- ======================================================= --}}
+    <div class="row mt-4">
+        
+        {{-- 4.1. BẢNG XẾP HẠNG TOP 5 TOUR BÁN CHẠY --}}
+        <div class="col-lg-5">
+            <div class="card shadow-sm border-0">
                 <div class="card-header bg-white border-bottom">
-                    <h3 class="card-title font-weight-bold"><i class="fas fa-cart-arrow-down text-success mr-2"></i>Đơn Hàng Gần Đây</h3>
-                    <div class="card-tools"><a href="{{ url('admin/bookings') }}" class="btn btn-sm btn-outline-primary rounded-pill">Xem tất cả</a></div>
-                </div>
-                <div class="card-body p-0 table-responsive">
-                    <table class="table table-hover table-valign-middle mb-0">
-                        <thead class="bg-light text-muted">
-                            <tr>
-                                <th>Mã Đơn</th>
-                                <th>Khách Hàng</th>
-                                <th>Ngày Đặt</th>
-                                <th>Trạng Thái</th>
-                                <th class="text-right">Tổng Tiền</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($recentBookings as $booking)
-                            <tr>
-                                <td><a href="{{ url('admin/bookings/'.$booking->bookingid) }}" class="font-weight-bold text-primary">#{{ str_pad($booking->bookingid, 5, '0', STR_PAD_LEFT) }}</a></td>
-                                <td>{{ Str::limit($booking->username, 20) }}</td>
-                                <td>{{ \Carbon\Carbon::parse($booking->bookingdate)->format('d/m/Y') }}</td>
-                                <td>
-                                    @if($booking->bookingstatus == 'confirmed')
-                                        <span class="badge badge-success px-2 py-1">Đã Duyệt</span>
-                                    @elseif($booking->bookingstatus == 'pending')
-                                        <span class="badge badge-warning px-2 py-1">Chờ Duyệt</span>
-                                    @else
-                                        <span class="badge badge-danger px-2 py-1">Đã Hủy</span>
-                                    @endif
-                                </td>
-                                <td class="text-right font-weight-bold text-dark">{{ number_format($booking->totalprice) }}đ</td>
-                            </tr>
-                            @endforeach
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-
-            {{-- TOP TOUR HIỆU QUẢ --}}
-            <div class="card shadow-sm border-0 rounded-lg">
-                <div class="card-header bg-white border-bottom">
-                    <h3 class="card-title font-weight-bold"><i class="fas fa-award text-warning mr-2"></i>Top Tour Hiệu Quả</h3>
+                    <h3 class="card-title font-weight-bold text-dark"><i class="fas fa-trophy text-warning mr-2"></i>Top 5 Tour Bán Chạy Nhất</h3>
                 </div>
                 <div class="card-body p-0">
                     <ul class="products-list product-list-in-card pl-2 pr-2">
-                        @php $maxBookings = $topTours->max('total_bookings'); @endphp
-                        @foreach($topTours as $index => $top)
-                        <li class="item p-3 border-bottom-0">
-                            <div class="product-info ml-0">
-                                <span class="product-title font-weight-bold text-dark">
-                                    <span class="badge badge-{{ $index == 0 ? 'danger' : ($index == 1 ? 'warning' : 'secondary') }} mr-2">Top {{ $index + 1 }}</span>
-                                    {{ $top->title }}
-                                    <span class="badge badge-success float-right px-2 py-1">{{ number_format($top->total_earned) }}đ</span>
-                                </span>
-                                <span class="product-description mt-2">
-                                    <div class="d-flex justify-content-between align-items-center mb-1"><small class="text-muted">Đã bán: {{ $top->total_bookings }} đơn</small></div>
-                                    <div class="progress progress-sm"><div class="progress-bar bg-primary" style="width: {{ ($top->total_bookings / ($maxBookings > 0 ? $maxBookings : 1)) * 100 }}%"></div></div>
-                                </span>
-                            </div>
-                        </li>
-                        @endforeach
+                        @forelse($topTours as $index => $tour)
+                            <li class="item p-3 border-bottom-0">
+                                <div class="product-info ml-0">
+                                    <a href="javascript:void(0)" class="product-title text-dark">
+                                        <span class="badge badge-{{ $index == 0 ? 'danger' : ($index == 1 ? 'warning' : ($index == 2 ? 'success' : 'secondary')) }} mr-2">#{{ $index + 1 }}</span>
+                                        {{ Str::limit($tour->title, 40) }}
+                                        <span class="badge badge-info float-right">{{ $tour->total_bookings }} Đơn</span>
+                                    </a>
+                                    <span class="product-description text-success font-weight-bold mt-1">
+                                        <i class="fas fa-money-bill-wave mr-1"></i> Doanh thu: {{ number_format($tour->total_earned) }} đ
+                                    </span>
+                                    {{-- Thanh tiến trình trực quan --}}
+                                    @php 
+                                        $maxBookings = $topTours->max('total_bookings'); 
+                                        $percent = ($tour->total_bookings / ($maxBookings > 0 ? $maxBookings : 1)) * 100;
+                                    @endphp
+                                    <div class="progress progress-xs mt-2">
+                                        <div class="progress-bar bg-{{ $index == 0 ? 'danger' : 'info' }}" style="width: {{ $percent }}%"></div>
+                                    </div>
+                                </div>
+                            </li>
+                        @empty
+                            <li class="item p-3 text-center text-muted">Chưa có dữ liệu Tour bán chạy.</li>
+                        @endforelse
                     </ul>
                 </div>
             </div>
         </div>
 
-        {{-- NHẬT KÝ HOẠT ĐỘNG --}}
-        <div class="col-lg-4">
-            <div class="card shadow-sm border-0 rounded-lg h-100">
-                <div class="card-header bg-white border-bottom pt-4 pb-0">
-                    <h3 class="card-title font-weight-bold"><i class="fas fa-history text-secondary mr-2"></i>Nhật Ký Hệ Thống</h3>
+        {{-- 4.2. DANH SÁCH ĐƠN HÀNG MỚI ĐỔ VỀ --}}
+        <div class="col-lg-7">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-bottom">
+                    <h3 class="card-title font-weight-bold text-dark"><i class="fas fa-cart-arrow-down text-primary mr-2"></i>Đơn Đặt Tour Mới Nhất</h3>
+                    <div class="card-tools">
+                        <a href="{{ route('admin.bookings.index') }}" class="btn btn-sm btn-outline-primary">Xem tất cả</a>
+                    </div>
                 </div>
-                <div class="card-body p-3">
-                    <div class="timeline timeline-inverse">
+                <div class="card-body p-0 table-responsive">
+                    <table class="table table-hover table-striped align-middle mb-0">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Mã Đơn</th>
+                                <th>Khách hàng</th>
+                                <th>Tổng tiền</th>
+                                <th>Trạng thái</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse($recentBookings as $booking)
+                                <tr>
+                                    <td>
+                                        <a href="{{ route('admin.bookings.show', $booking->bookingid) }}" class="font-weight-bold text-primary">
+                                            #{{ str_pad($booking->bookingid, 5, '0', STR_PAD_LEFT) }}
+                                        </a>
+                                        <br><small class="text-muted">{{ \Carbon\Carbon::parse($booking->bookingdate)->format('d/m/Y') }}</small>
+                                    </td>
+                                    <td>
+                                        <b>{{ $booking->username }}</b>
+                                        <br><span class="badge bg-light text-dark border">{{ strtoupper($booking->paymentmethod) }}</span>
+                                    </td>
+                                    <td class="font-weight-bold text-dark">{{ number_format($booking->totalprice) }}đ</td>
+                                    <td>
+                                        {{-- Trạng thái Đơn hàng --}}
+                                        @if($booking->bookingstatus == 'pending') <span class="badge badge-warning"><i class="fas fa-clock"></i> Chờ duyệt</span>
+                                        @elseif($booking->bookingstatus == 'confirmed') <span class="badge badge-success"><i class="fas fa-check"></i> Đã duyệt</span>
+                                        @elseif($booking->bookingstatus == 'completed') <span class="badge badge-primary"><i class="fas fa-flag-checkered"></i> Hoàn tất</span>
+                                        @else <span class="badge badge-danger"><i class="fas fa-times"></i> Đã hủy</span>
+                                        @endif
+                                        
+                                        <div class="mt-1"></div>
+                                        
+                                        {{-- Trạng thái Thanh toán --}}
+                                        @if($booking->paymentstatus == 'unpaid') <span class="badge badge-secondary">Chưa TT</span>
+                                        @elseif($booking->paymentstatus == 'deposit_paid') <span class="badge badge-info">Đã Cọc</span>
+                                        @elseif($booking->paymentstatus == 'paid') <span class="badge badge-success">Đã TT 100%</span>
+                                        @elseif($booking->paymentstatus == 'refund_pending') <span class="badge badge-warning">Chờ hoàn tiền</span>
+                                        @else <span class="badge badge-dark">Đã hoàn tiền</span>
+                                        @endif
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr><td colspan="4" class="text-center text-muted">Chưa có đơn đặt tour nào.</td></tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- ======================================================= --}}
+    {{-- KHỐI 5: NHẬT KÝ HOẠT ĐỘNG HỆ THỐNG (TIMELINE) --}}
+    {{-- ======================================================= --}}
+    <div class="row mt-2">
+        <div class="col-12">
+            <div class="card shadow-sm border-0">
+                <div class="card-header bg-white border-bottom">
+                    <h3 class="card-title font-weight-bold text-dark"><i class="fas fa-history text-secondary mr-2"></i>Nhật Ký Hoạt Động (Logs)</h3>
+                </div>
+                <div class="card-body">
+                    <div class="timeline timeline-inverse mb-0">
                         @foreach($histories as $history)
-                        <div>
-                            <i class="fas fa-circle bg-primary" style="font-size: 8px; border: 2px solid white;"></i>
-                            <div class="timeline-item border-0 shadow-none bg-light rounded mb-3 p-2">
-                                <span class="time small text-muted font-weight-bold"><i class="far fa-clock"></i> {{ \Carbon\Carbon::parse($history->timestamp)->diffForHumans() }}</span>
-                                <h3 class="timeline-header border-0 p-0 text-sm mt-1"><strong>{{ $history->username }}</strong></h3>
-                                <div class="timeline-body p-0 text-xs mt-1 text-dark">{{ $history->actionType }}</div>
+                            @php 
+                                // Tạo màu và icon ngẫu nhiên dựa trên nội dung actionType cho sinh động
+                                $icon = 'fa-info'; $color = 'bg-primary';
+                                if(str_contains(strtolower($history->actionType), 'hủy')) { $icon = 'fa-ban'; $color = 'bg-danger'; }
+                                elseif(str_contains(strtolower($history->actionType), 'tạo') || str_contains(strtolower($history->actionType), 'mới')) { $icon = 'fa-plus'; $color = 'bg-success'; }
+                                elseif(str_contains(strtolower($history->actionType), 'cập nhật') || str_contains(strtolower($history->actionType), 'duyệt')) { $icon = 'fa-edit'; $color = 'bg-warning'; }
+                                elseif(str_contains(strtolower($history->actionType), 'thanh toán') || str_contains(strtolower($history->actionType), 'thu tiền')) { $icon = 'fa-dollar-sign'; $color = 'bg-info'; }
+                            @endphp
+                            <div>
+                                <i class="fas {{ $icon }} {{ $color }}"></i>
+                                <div class="timeline-item shadow-none border">
+                                    <span class="time text-muted"><i class="far fa-clock"></i> {{ \Carbon\Carbon::parse($history->timestamp)->diffForHumans() }}</span>
+                                    <h3 class="timeline-header border-0" style="font-size: 0.9rem;">
+                                        <b class="text-primary">{{ $history->username }}</b> 
+                                        <span class="text-muted">{{ $history->actionType }}</span>
+                                    </h3>
+                                </div>
                             </div>
-                        </div>
                         @endforeach
-                        <div><i class="fas fa-clock bg-gray"></i></div>
+                        <div><i class="far fa-clock bg-gray"></i></div>
                     </div>
                 </div>
             </div>

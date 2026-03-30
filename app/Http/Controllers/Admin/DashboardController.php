@@ -60,7 +60,7 @@ class DashboardController extends Controller
 
         // PHỤ PHÍ ĐÓN KHÁCH (Khoản thu cố định không hoàn)
         $totalPickupFees = DB::table('tbl_bookings')
-            ->where('bookingstatus', '!=', 'cancelled')
+            ->whereIn('paymentstatus', ['paid', 'deposit_paid', 'refund_pending', 'refunded'])
             ->sum('pickup_fee_total');
 
         // TIỀN CHỜ HOÀN TRẢ (Lấy trực tiếp từ cột refund_amount đã chốt)
@@ -74,9 +74,10 @@ class DashboardController extends Controller
             ->sum('refund_amount');
 
         // CÔNG NỢ CẦN THU (Tính cả phí đón)
-        $totalDebt = DB::table('tbl_bookings')
+            $totalDebt = DB::table('tbl_bookings')
             ->where('bookingstatus', '!=', 'cancelled')
-            ->sum(DB::raw('totalprice + IFNULL(pickup_fee_total, 0) - paid_amount'));
+            ->where('paymentstatus', '!=', 'paid')
+            ->sum(DB::raw('totalprice - paid_amount'));
 
         // 3. BIỂU ĐỒ DOANH THU 12 THÁNG (Đã trừ refund hàng tháng)
         $monthlyRevenue = [];

@@ -18,13 +18,30 @@
 @stop
 
 @section('content')
+@php
+        // LOGIC TÍNH TOÁN PHỤ PHÍ ĐỂ HIỂN THỊ KHỚP VỚI CONTROLLER
+        $pickupFeeTotal = 0;
+        if($booking->pickup_id) {
+            $pickup = DB::table('tbl_tour_pickups')->where('pickup_id', $booking->pickup_id)->first();
+            if($pickup) {
+                if($pickup->fee_type == 0) {
+                    $totalPax = ($booking->numadults ?? 0) + ($booking->numchildren ?? 0) ?: ($booking->quantity ?? 1);
+                    $pickupFeeTotal = $pickup->extra_price * $totalPax;
+                } else {
+                    $pickupFeeTotal = $pickup->extra_price;
+                }
+            }
+        }
+        $finalTotalPrice = $booking->totalprice + $pickupFeeTotal;
+        $balance = $finalTotalPrice - $booking->paid_amount;
+    @endphp
     {{-- 1. THANH CHỈ SỐ NHANH --}}
     <div class="row">
         <div class="col-lg-4 col-6">
             <div class="small-box bg-info shadow-sm">
                 <div class="inner">
-                    <h3>{{ number_format($booking->totalprice) }}<sup style="font-size: 20px">đ</sup></h3>
-                    <p>Tổng giá trị đơn hàng</p>
+                    <h3>{{ number_format($finalTotalPrice) }}<sup style="font-size: 20px">đ</sup></h3>
+                    <p>Tổng giá trị (Gồm phụ phí)</p>
                 </div>
                 <div class="icon"><i class="fas fa-shopping-cart"></i></div>
             </div>
@@ -33,13 +50,12 @@
             <div class="small-box bg-success shadow-sm">
                 <div class="inner">
                     <h3>{{ number_format($booking->paid_amount) }}<sup style="font-size: 20px">đ</sup></h3>
-                    <p>Số tiền thực thu</p>
+                    <p>Số tiền đã thanh toán</p>
                 </div>
                 <div class="icon"><i class="fas fa-check-circle"></i></div>
             </div>
         </div>
         <div class="col-lg-4 col-12">
-            @php $balance = $booking->totalprice - $booking->paid_amount; @endphp
             <div class="small-box {{ $balance > 0 ? 'bg-danger' : 'bg-secondary' }} shadow-sm">
                 <div class="inner">
                     <h3>{{ number_format($balance > 0 ? $balance : 0) }}<sup style="font-size: 20px">đ</sup></h3>
@@ -211,11 +227,11 @@
                             <i class="fas fa-save mr-1"></i> LƯU THAY ĐỔI
                         </button>
                         
-                        @if($booking->paymentstatus != 'paid' && $booking->bookingstatus != 'cancelled')
-                        {{-- Đổi onclick truyền thống thành class để gọi popup SweetAlert2 --}}
+                            @if($booking->paymentstatus != 'paid' && $booking->bookingstatus != 'cancelled')
                         <a href="{{ route('admin.bookings.confirm_cash', $booking->bookingid) }}" 
-                           class="btn btn-outline-success btn-block mt-3 shadow-sm font-weight-bold btn-confirm-cash">
-                            <i class="fas fa-hand-holding-usd mr-1"></i> NHẬN TIỀN MẶT 100%
+                           class="btn btn-outline-success btn-block mt-3 shadow-sm font-weight-bold btn-confirm-cash"
+                           data-total="{{ number_format($finalTotalPrice) }}">
+                            <i class="fas fa-hand-holding-usd mr-1"></i> THU TIỀN MẶT 100%
                         </a>
                         @endif
                     </div>
@@ -273,6 +289,7 @@
             $('.btn-confirm-cash').on('click', function(e) {
                 e.preventDefault(); // Ngăn chặn nhảy trang ngay lập tức
                 let url = $(this).attr('href'); // Lấy link của nút
+                let total = $(this).data('total');
                 
                 Swal.fire({
                     title: 'Xác nhận thu tiền?',

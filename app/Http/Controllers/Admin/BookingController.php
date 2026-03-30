@@ -86,16 +86,17 @@ class BookingController extends Controller
 
             if (!$booking) return back()->with('error', 'Không tìm thấy đơn hàng.');
 
-            // Cập nhật trạng thái thanh toán đủ
+            //  Tính TỔNG THỰC THU = Giá Tour + Phụ phí đón khách
+            $final_total = $this->calculateFinalTotal($booking);
             DB::table('tbl_bookings')->where('bookingid', $id)->update([
                 'paymentstatus' => 'paid',
-                'paid_amount'   => $booking->totalprice,
+                'paid_amount'   => $final_total,
                 'bookingstatus' => 'confirmed',
                 'paymentmethod' => 'Cash'
             ]);
 
             // Tạo hóa đơn
-            $this->autoCreateInvoice($id, $booking->email);
+            $this->autoCreateInvoice($id, $booking->email, $final_total);
 
             // Gửi mail xác nhận
             $this->sendBookingEmail($id);
@@ -134,11 +135,12 @@ class BookingController extends Controller
 
         $isFirstTimePaid = ($newPaymentStatus == 'paid' && $oldPaymentStatus != 'paid');
 
-        // Xử lý tiền thực thu
+        // FIX LOGIC: Tính TỔNG THỰC THU (bao gồm cả tiền đón khách)
+        $final_total = $this->calculateFinalTotal($booking);
         if ($newPaymentStatus == 'paid') {
-            $booking->paid_amount = $booking->totalprice; 
+            $booking->paid_amount = $final_total;
         } elseif ($newPaymentStatus == 'deposit_paid' && $oldPaymentStatus == 'unpaid') {
-            $booking->paid_amount = $booking->deposit_amount > 0 ? $booking->deposit_amount : ($booking->totalprice * 0.3);
+            $booking->paid_amount = $booking->deposit_amount > 0 ? $booking->deposit_amount : ($final_total * 0.3);
         } elseif ($newPaymentStatus == 'unpaid') {
             $booking->paid_amount = 0; 
         }
@@ -149,7 +151,7 @@ class BookingController extends Controller
 
         // Tự động tạo hóa đơn và gửi mail nếu vừa chuyển sang 'paid'
         if ($isFirstTimePaid) {
-            $this->autoCreateInvoice($id, $booking->user->email ?? $booking->email);
+            $this->autoCreateInvoice($id, $booking->user->email ?? $booking->email, $final_total);
             $this->sendBookingEmail($id);
         }
 
@@ -158,12 +160,7 @@ class BookingController extends Controller
             $this->sendBookingEmail($id);
         }
 
-        // Ghi lại lịch sử hệ thống
-        History::create([
-            'userid' => Auth::id() ?? 1,
-            'actionType' => "Cập nhật đơn #$id: Trạng thái $newStatus, Thanh toán $newPaymentStatus",
-            'timestamp' => now()
-        ]);
+        
 
         return redirect()->route('admin.bookings.show', $id)->with('success', 'Đã cập nhật trạng thái đơn hàng thành công!');
     }
@@ -175,19 +172,37 @@ class BookingController extends Controller
     /**
      * Tự động tạo hóa đơn vào bảng tbl_invoice
      */
-    private function autoCreateInvoice($bookingId, $customerEmail) {
+    /**
+     * Tự động tạo hóa đơn vào bảng tbl_invoice
+     * Nâng cấp: Truyền thêm tham số $finalTotal để khớp với tiền phụ phí
+     */
+    /**
+     * Tự động tạo hóa đơn vào bảng tbl_invoice
+     */
+    private function autoCreateInvoice($bookingId, $customerEmail, $finalTotal = null) 
+    {
+        // 1. Dùng Query Builder để lấy dữ liệu nhanh
         $booking = DB::table('tbl_bookings')->where('bookingid', $bookingId)->first();
+        
         if ($booking) {
+            // 2. Kiểm tra trùng lặp (Giữ nguyên logic của bạn)
             $exists = DB::table('tbl_invoice')->where('bookingid', $bookingId)->exists();
+            
             if (!$exists) {
                 $tour = DB::table('tbl_tours')->where('tourid', $booking->tourid)->first();
+                
+                // 3. Đảm bảo số tiền luôn là kiểu số (float/int) để tránh lỗi DB
+                // Nếu $finalTotal không có, lấy totalprice, nếu vẫn không có thì lấy 0
+                $amountToPay = (float)($finalTotal ?? ($booking->totalprice ?? 0));
+
                 DB::table('tbl_invoice')->insert([
                     'bookingid'   => $bookingId,
                     'userid'      => $booking->userid,
-                    'email'       => $customerEmail ?? 'khachhang@gmail.com',
-                    'detelssued'  => now(), // Tên cột chính xác từ SQL của bạn
-                    'totalamount' => $booking->totalprice,
-                    'detail'      => 'Hóa đơn thanh toán cho Tour: ' . ($tour->title ?? "#$bookingId")
+                    // Ưu tiên Email truyền vào -> Email trong Booking -> Email mặc định
+                    'email'       => $customerEmail ?? ($booking->email ?? 'khachhang@gmail.com'),
+                    'detelssued'  => now(), 
+                    'totalamount' => $amountToPay,
+                    'detail'      => 'Hóa đơn thanh toán cho Tour: ' . ($tour->title ?? "Đơn hàng #$bookingId")
                 ]);
             }
         }
@@ -217,5 +232,31 @@ class BookingController extends Controller
         } catch (\Exception $e) {
             Log::error("Lỗi gửi mail đơn hàng #$bookingId tại Admin: " . $e->getMessage());
         }
+    }
+    private function calculateFinalTotal($booking)
+    {
+        $pickup_fee = 0;
+
+        // Kiểm tra nếu đơn hàng có chọn dịch vụ đón khách (pickup_id)
+        if (!empty($booking->pickup_id)) {
+            $pickup = DB::table('tbl_tour_pickups')->where('pickup_id', $booking->pickup_id)->first();
+            
+            if ($pickup) {
+                if ($pickup->fee_type == 0) {
+                    // Loại 0: Tính theo đầu người (Adults + Children)
+                    $total_pax = ($booking->adults ?? 0) + ($booking->children ?? 0);
+                    // Nếu không có dữ liệu số người, lấy mặc định quantity
+                    if ($total_pax == 0) $total_pax = $booking->quantity ?? 1;
+                    
+                    $pickup_fee = $pickup->extra_price * $total_pax;
+                } else {
+                    // Loại 1: Tính phí cố định cho cả đoàn
+                    $pickup_fee = $pickup->extra_price;
+                }
+            }
+        }
+
+        // Tổng thực thu = Giá tour gốc + Phụ phí đón khách
+        return (float)($booking->totalprice + $pickup_fee);
     }
 }

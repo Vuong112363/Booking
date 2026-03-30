@@ -39,7 +39,7 @@ return [
 
     'logo' => '',
     'logo_img' => 'clients/assets/images/logos/logo-two.png',
-    'logo_img_class' => 'brand-image ', 
+    'logo_img_class' => 'brand-image', 
     'logo_img_xl' => null,
     'logo_img_xl_class' => 'brand-image-xs',
     'logo_img_alt' => 'GoViet Logo',
@@ -63,19 +63,19 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Preloader Animation
+    | Preloader Animation (ĐÃ BẬT - Giúp chuyển trang mượt mà hơn)
     |--------------------------------------------------------------------------
     */
 
     'preloader' => [
-        'enabled' => false, 
+        'enabled' => true, // Nâng cấp: Đổi thành true
         'mode' => 'fullscreen',
         'img' => [
             'path' => 'clients/assets/images/logos/logo-two.png',
             'alt' => 'GoViet Preloader',
             'effect' => 'animation__shake',
-            'width' => 60,
-            'height' => 60,
+            'width' => 80,
+            'height' => 80,
         ],
     ],
 
@@ -130,13 +130,8 @@ return [
     'classes_content_wrapper' => 'bg-light', 
     'classes_content_header' => '',
     'classes_content' => '',
-    
-    // Nâng cấp: Sidebar sáng, đổ bóng sâu (elevation-4), màu nhấn là Info
     'classes_sidebar' => 'sidebar-light-info elevation-4', 
-    
-    // Nâng cấp: nav-pills (bo tròn menu active), nav-child-indent (thụt lề menu con chuyên nghiệp)
     'classes_sidebar_nav' => 'nav-pills nav-sidebar flex-column nav-child-indent nav-compact', 
-    
     'classes_topnav' => 'navbar-info navbar-dark border-bottom-0', 
     'classes_topnav_nav' => 'navbar-expand',
     'classes_topnav_container' => 'container',
@@ -189,33 +184,34 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Laravel Asset Bundling
-    |--------------------------------------------------------------------------
-    */
-
-    'laravel_asset_bundling' => false,
-    'laravel_css_path' => 'css/app.css',
-    'laravel_js_path' => 'js/app.js',
-
-    /*
-    |--------------------------------------------------------------------------
-    | Menu Items (ĐÃ ĐƯỢC TỐI ƯU PHÂN CẤP)
+    | Menu Items (ĐÃ ĐƯỢC TỐI ƯU & NÂNG CẤP)
     |--------------------------------------------------------------------------
     */
 
     'menu' => [
-        // Navbar
+        // ======= TOP NAVIGATION =======
         [
             'type' => 'navbar-search',
             'text' => 'Tìm kiếm...',
             'topnav_right' => true,
         ],
         [
+            'type' => 'navbar-darkmode-widget', // Nâng cấp: Nút bật/tắt Dark Mode
+            'topnav_right' => true,
+        ],
+        [
             'type' => 'fullscreen-widget',
             'topnav_right' => true,
         ],
+        [
+            'text' => 'Xem Website', // Nâng cấp: Mở nhanh trang khách hàng
+            'url'  => '/',
+            'icon' => 'fas fa-fw fa-external-link-alt',
+            'topnav_right' => true,
+            'target' => '_blank',
+        ],
 
-        // Sidebar
+        // ======= SIDEBAR =======
         [
             'type' => 'sidebar-menu-search',
             'text' => 'Tìm kiếm nhanh...',
@@ -225,7 +221,7 @@ return [
             'route'  => 'admin.dashboard',
             'icon' => 'fas fa-chart-line',
             'label' => 'HOT',
-            'label_color' => 'success',
+            'label_color' => 'danger',
         ],
         
         ['header' => 'QUẢN LÝ NGHIỆP VỤ'],
@@ -241,12 +237,14 @@ return [
                 [
                     'text' => 'Quản lý Booking',
                     'url' => 'admin/bookings',
-                    'icon' => 'fas fa-calendar-check',
+                    'icon' => 'fas fa-calendar-check text-warning',
+                    'label' => 'Mới', // Nâng cấp: Báo hiệu có đơn mới
+                    'label_color' => 'warning',
                 ],
                 [
                     'text' => 'Đánh giá khách hàng',
                     'route' => 'admin.reviews.index',
-                    'icon' => 'fas fa-star',
+                    'icon' => 'fas fa-star text-primary',
                 ],
             ],
         ],
@@ -265,6 +263,15 @@ return [
                     'icon' => 'fas fa-newspaper',
                 ],
             ],
+        ],
+        
+        // Nâng cấp: Thêm mục Thống Kê / Báo cáo
+        [
+            'text'    => 'Báo cáo doanh thu',
+            'icon'    => 'fas fa-chart-pie',
+            'url'     => '#', // Thay bằng route của bạn sau
+            'label'   => 'Pro',
+            'label_color' => 'success',
         ],
 
         ['header' => 'KHÁCH HÀNG & HỖ TRỢ'],
@@ -307,7 +314,7 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Plugins Initialization
+    | Plugins Initialization (ĐÃ CẬP NHẬT)
     |--------------------------------------------------------------------------
     */
 
@@ -325,6 +332,8 @@ return [
             'files' => [
                 ['type' => 'js', 'asset' => false, 'location' => '//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/js/select2.min.js'],
                 ['type' => 'css', 'asset' => false, 'location' => '//cdnjs.cloudflare.com/ajax/libs/select2/4.0.3/css/select2.css'],
+                // Nâng cấp: Giao diện Bootstrap 4 cho Select2 đẹp và vuông vắn hơn
+                ['type' => 'css', 'asset' => false, 'location' => '//cdn.jsdelivr.net/npm/@ttskch/select2-bootstrap4-theme@x.x.x/dist/select2-bootstrap4.min.css'],
             ],
         ],
         'Chartjs' => [
@@ -336,7 +345,8 @@ return [
         'Sweetalert2' => [
             'active' => true,
             'files' => [
-                ['type' => 'js', 'asset' => false, 'location' => '//cdn.jsdelivr.net/npm/sweetalert2@8'],
+                // Nâng cấp: Lên hẳn version 11 (Mới nhất, khớp với code JS bạn đang code)
+                ['type' => 'js', 'asset' => false, 'location' => '//cdn.jsdelivr.net/npm/sweetalert2@11'],
             ],
         ],
         'Pace' => [

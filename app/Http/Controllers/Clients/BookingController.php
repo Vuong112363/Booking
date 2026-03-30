@@ -75,36 +75,24 @@ class BookingController extends Controller
     }
 
 
-    // =========================
+// =========================
     // LƯU BOOKING
     // =========================
     public function store(Request $request, $id)
-
     {
-        
-
         if(!session()->has('userid')){
-            return redirect('/login')
-            ->with('error','Vui lòng đăng nhập để đặt tour');
+            return redirect('/login')->with('error','Vui lòng đăng nhập để đặt tour');
         }
 
         $userid = session('userid');
 
         // 🔒 chống spam
-        $pendingBookings = DB::table('tbl_bookings')
-            ->where('userid', $userid)
-            ->where('bookingstatus', 'pending')
-            ->count();
-
+        $pendingBookings = DB::table('tbl_bookings')->where('userid', $userid)->where('bookingstatus', 'pending')->count();
         if($pendingBookings >= 3){
             return back()->with('error','Bạn có quá nhiều đơn chưa thanh toán');
         }
 
-        $dailyBookings = DB::table('tbl_bookings')
-            ->where('userid', $userid)
-            ->whereDate('bookingdate', date('Y-m-d'))
-            ->count();
-
+        $dailyBookings = DB::table('tbl_bookings')->where('userid', $userid)->whereDate('bookingdate', date('Y-m-d'))->count();
         if($dailyBookings >= 5){
             return back()->with('error','Bạn đã đạt giới hạn 5 đơn/ngày. Vui lòng thử lại ngày mai!.Hoặc liên hệ hỗ trợ nếu cần đặt gấp.');
         }
@@ -133,25 +121,10 @@ class BookingController extends Controller
             }
         }
 
-        $total = ($adult * $priceAdult) + ($child * $priceChild);
+        // BƯỚC 1: TÍNH TIỀN TOUR GỐC
+        $tourPriceTotal = ($adult * $priceAdult) + ($child * $priceChild);
 
-        // 1. KIỂM TRA XEM TOUR ĐÃ QUÁ HẠN CHƯA
-        if ($startDate && \Carbon\Carbon::parse($startDate)->endOfDay()->isPast()) {
-            return back()->with('error', 'Rất tiếc, lịch khởi hành này đã qua. Vui lòng chọn ngày khác!');
-        }
-
-        // 2. KIỂM TRA TOUR CÓ BỊ TẠM NGƯNG KHÔNG
-        if ($tour->availability == 0) {
-            return back()->with('error', 'Tour này hiện đang tạm ngưng nhận khách.');
-        }
-
-        // 3. KIỂM TRA SỐ LƯỢNG CHỖ TRỐNG
-        $totalPassengers = $adult + $child;
-        if ($availableQuantity < $totalPassengers) {
-            return back()->with('error', 'Số chỗ trống không đủ. Chuyến này chỉ còn ' . $availableQuantity . ' chỗ.');
-        }
-
-        // 4. Xử lý mã giảm giá (Nếu có)
+        // BƯỚC 2: KIỂM TRA MÃ GIẢM GIÁ VÀ TRỪ TRỰC TIẾP VÀO GIÁ TOUR
         $couponCode = trim($request->input('coupon_code_hidden'));
         if($couponCode) {
             $promotion = DB::table('tbl_promotion')
@@ -160,28 +133,46 @@ class BookingController extends Controller
                 ->first();
                 
             if($promotion) {    
-                $discountAmount = $total * ($promotion->discount_percent / 100);
-                $total = $total - $discountAmount;
+                $discountAmount = $tourPriceTotal * ($promotion->discount_percent / 100);
+                $tourPriceTotal = $tourPriceTotal - $discountAmount;
                 DB::table('tbl_promotion')
                     ->where('promotionid', $promotion->promotionid)
                     ->decrement('quantity', 1);
             }
         }
 
-        $deposit = round($total * 0.3);
+        // BƯỚC 3: CỘNG PHỤ PHÍ ĐÓN KHÁCH (Pickup fee không được giảm giá)
+        $pickupFee = (float)($request->pickup_fee_total_hidden ?? 0);
+        $finalTotal = $tourPriceTotal + $pickupFee; 
+
+        // BƯỚC 4: TÍNH TIỀN CỌC TRÊN TỔNG CỘNG CUỐI CÙNG
+        $deposit = round($finalTotal * 0.3);
+
+        // --- CÁC BƯỚC KIỂM TRA AN TOÀN ---
+        if ($startDate && \Carbon\Carbon::parse($startDate)->endOfDay()->isPast()) {
+            return back()->with('error', 'Rất tiếc, lịch khởi hành này đã qua. Vui lòng chọn ngày khác!');
+        }
+        if ($tour->availability == 0) {
+            return back()->with('error', 'Tour này hiện đang tạm ngưng nhận khách.');
+        }
+        $totalPassengers = $adult + $child;
+        if ($availableQuantity < $totalPassengers) {
+            return back()->with('error', 'Số chỗ trống không đủ. Chuyến này chỉ còn ' . $availableQuantity . ' chỗ.');
+        }
+
         $info = "Tên: ".$request->username." | Email: ".$request->email." | SĐT: ".$request->tel." | Địa chỉ: ".$request->dia_chi;
 
-        // Lưu booking
+        // --- LƯU BOOKING ---
         $bookingData = [
             'tourid' => $id,
             'userid' => $userid,
             'bookingdate' => now(),
             'numadults' => $adult,
             'numchildren' => $child,
-            'totalprice' => $total,
+            'totalprice' => $finalTotal, // Đã chốt lại tổng tiền cực chuẩn
             'schedule_id' => $request->schedule_id,
             'pickup_id' => $request->pickup_id,
-            'pickup_fee_total' => $request->pickup_fee_total_hidden,
+            'pickup_fee_total' => $pickupFee, 
             'deposit_amount' => $deposit,
             'paid_amount' => 0,
             'paymentstatus' => 'unpaid',
@@ -219,15 +210,17 @@ class BookingController extends Controller
         } catch (\Exception $e) {
             \Log::error("Lỗi gửi mail đặt tour ID $bookingId: " . $e->getMessage());
         }
+
         if($payment == "cash") {
-            $this->sendBookingEmail($bookingId);
+            // Lưu ý: Hàm này ở trên đã gửi 1 email rồi, gọi sendBookingEmail nữa sẽ gửi 2 cái
+            // $this->sendBookingEmail($bookingId); 
         }
 
         if($payment == "momo"){
             return redirect('/momo-payment/'.$bookingId);
         }
 
-        History::create([
+        \App\Models\History::create([
             'userid' => $userid,
             'actionType' => "Tạo đơn đặt tour mới (ID: $bookingId). Phương thức: " . $request->paymentmethod,
             'timestamp' => now()

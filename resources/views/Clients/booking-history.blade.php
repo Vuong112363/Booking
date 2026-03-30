@@ -308,174 +308,185 @@
                                                     
 
                                                     {{-- Cột 2: Bảng tính tiền chi tiết --}}
-                                                    {{-- Cột 2: Bảng tính tiền chi tiết --}}
-                                                    <div class="col-md-6">
-                                                        <div class="bg-white p-3 rounded border h-100 small position-relative overflow-hidden">
-                                                            
-                                                            {{-- LOGIC 4 TRẠNG THÁI THANH TOÁN CHUẨN --}}
-                                                            @if($item->bookingstatus == 'cancelled')
-                                                                {{-- 1. TRƯỜNG HỢP ĐÃ HỦY TOUR --}}
-                                                                <div class="position-absolute d-flex flex-column align-items-center justify-content-center" 
-                                                                    style="top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg); opacity: 0.08; pointer-events: none; z-index: 0;">
-                                                                    <i class="fa-solid fa-ban text-danger mb-1" style="font-size: 5rem;"></i>
-                                                                    <span class="text-danger font-weight-bold" style="font-size: 1.5rem; letter-spacing: 2px;">CANCELLED</span>
-                                                                </div>
+<div class="col-md-6">
+    <div class="bg-white p-3 rounded border h-100 small position-relative overflow-hidden">
+        
+        {{-- WATERMARK HIỂU ỨNG CHÌM (CHỈ HIỆN KHI HỦY HOẶC ĐÃ TRẢ ĐỦ) --}}
+        @if($item->bookingstatus == 'cancelled')
+            <div class="position-absolute d-flex flex-column align-items-center justify-content-center" 
+                style="top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg); opacity: 0.08; pointer-events: none; z-index: 0;">
+                <i class="fa-solid fa-ban text-danger mb-1" style="font-size: 5rem;"></i>
+                <span class="text-danger font-weight-bold" style="font-size: 1.5rem; letter-spacing: 2px;">CANCELLED</span>
+            </div>
+        @elseif($item->paymentstatus == 'paid')
+            <div class="position-absolute d-flex flex-column align-items-center justify-content-center" 
+                style="top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg); opacity: 0.08; pointer-events: none; z-index: 0;">
+                <i class="fa-solid fa-stamp text-success mb-1" style="font-size: 5rem;"></i>
+                <span class="text-success font-weight-bold" style="font-size: 1.5rem; letter-spacing: 2px;">PAID IN FULL</span>
+            </div>
+        @endif
 
-                                                                <div class="position-relative" style="z-index: 1;">
-                                                                    <div class="d-flex justify-content-between mb-2 border-bottom pb-2">
-                                                                        <span class="text-muted">Phương thức:</span>
-                                                                        <span class="font-weight-bold text-uppercase">
-                                                                            @php $method = strtolower($item->paymentmethod); @endphp
-                                                                            @if($method == 'momo') <span class="text-pink" style="color: #a50064;"><i class="fa-solid fa-wallet mr-1"></i> Ví MoMo</span>
-                                                                            @elseif($method == 'cash' || $method == 'tien mat') <span class="text-success"><i class="fa-solid fa-money-bill-wave mr-1"></i> Tiền mặt</span>
-                                                                            @else <span class="text-info">{{ $item->paymentmethod ?? 'Chưa rõ' }}</span> @endif
-                                                                        </span>
-                                                                    </div>
-                                                                    @php
-                                                                // TÍNH TOÁN LẠI TIỀN HOÀN TRỰC TIẾP TRÊN GIAO DIỆN
-                                                                $paid = $item->paid_amount ?? 0;
-                                                                $refund = 0;
-                                                                if($paid > 0 && isset($item->startdate)) {
-                                                                    $daysToStart = (strtotime($item->startdate) - strtotime($item->bookingdate)) / 86400; 
-                                                                    // Lưu ý: nên dùng thời điểm hủy, nhưng ở đây dùng tạm logic ngày để hiển thị
-                                                                    if ($daysToStart >= 5) {
-                                                                        $refund = $paid; 
-                                                                    } elseif ($daysToStart >= 2) {
-                                                                        $refund = $paid * 0.5;
-                                                                    }
-                                                                }
-                                                            @endphp
+        <div class="position-relative" style="z-index: 1;">
+            
+            {{-- ========================================== --}}
+            {{-- PHẦN 1: BẢNG TÍNH CHI PHÍ MINH BẠCH --}}
+            {{-- ========================================== --}}
+            <h6 class="font-weight-bold text-dark border-bottom pb-2 mb-3"><i class="fa-solid fa-file-invoice-dollar mr-1"></i> Bảng tính chi phí</h6>
+            
+            {{-- Tiền Tour & Số người --}}
+            <div class="mb-3">
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Giá trị Tour:</span>
+                    <span class="font-weight-bold text-dark">{{ number_format($item->totalprice - ($item->pickup_fee_total ?? 0)) }} đ</span>
+                </div>
+                <div class="text-muted mt-1 bg-light p-2 rounded" style="font-size: 0.8rem; border-left: 3px solid #dee2e6;">
+                    <i class="fa-solid fa-user-group text-secondary mr-1"></i> {{ $item->numadults }} Người lớn
+                    @if($item->numchildren > 0)
+                        <span class="mx-2">|</span>
+                        <i class="fa-solid fa-child text-secondary mr-1"></i> {{ $item->numchildren }} Trẻ em
+                    @endif
+                </div>
+            </div>
 
-                                                                    <div class="d-flex justify-content-between mb-2">
-                                                                        <span class="text-muted">Số tiền đã đóng:</span>
-                                                                        <span class="font-weight-bold text-secondary">{{ number_format($item->paid_amount ?? 0) }} đ</span>
-                                                                    </div>
-                                                                    <div class="d-flex justify-content-between mb-2">
-                                                                <span class="text-muted">Số tiền đã đóng:</span>
-                                                                <span class="font-weight-bold text-dark">{{ number_format($paid) }} đ</span>
-                                                            </div>
-                                                            
-                                                            @if($refund > 0)
-                                                                <div class="d-flex justify-content-between mb-2">
-                                                                    <span class="text-muted">Tiền hoàn trả:</span>
-                                                                    <span class="font-weight-bold text-info">+ {{ number_format($refund) }} đ</span>
-                                                                </div>
-                                                                <div class="d-flex justify-content-between mt-2 pt-2 border border-danger p-2 rounded" style="background-color: #fef2f2;">
-                                                                    <span class="text-danger font-weight-bold"><i class="fa-solid fa-rotate-left mr-1"></i> TRẠNG THÁI:</span>
-                                                                    <span class="font-weight-bold text-danger" style="font-size: 0.95rem;">
-                                                                        @if($item->paymentstatus == 'refunded')
-                                                                <span class="text-success"><i class="fa-solid fa-check-circle mr-1"></i> Đã hoàn tiền xong</span>
-                                                            @elseif($item->paymentstatus == 'refund_pending')
-                                                                Đang chờ hoàn tiền
-                                                            @else
-                                                                Đã hủy đơn
-                                                            @endif
-                                                                    </span>
-                                                                </div>
-                                                            @else
-                                                                <div class="d-flex justify-content-between mt-2 pt-2 border border-secondary p-2 rounded bg-light">
-                                                                    <span class="text-secondary font-weight-bold"><i class="fa-solid fa-circle-xmark mr-1"></i> TRẠNG THÁI:</span>
-                                                                    <span class="font-weight-bold text-secondary" style="font-size: 0.95rem;">Đã hủy (Sát ngày - Không hoàn)</span>
-                                                                </div>
-                                                            @endif
-                                                        </div>
+            {{-- Tiền Phụ phí Đón xe --}}
+            @if(($item->pickup_fee_total ?? 0) > 0)
+            <div class="mb-3">
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Phụ phí xe đưa đón:</span>
+                    <span class="font-weight-bold text-warning">+ {{ number_format($item->pickup_fee_total) }} đ</span>
+                </div>
+                <div class="text-muted mt-1 bg-light p-2 rounded" style="font-size: 0.8rem; border-left: 3px solid #ffc107;">
+                    <div><i class="fa-solid fa-location-dot text-warning mr-1"></i> Đón tại: <b>{{ $item->pickup_name ?? 'Theo yêu cầu' }}</b></div>
+                    @if(isset($item->pickup_time))
+                    <div class="mt-1"><i class="fa-regular fa-clock text-warning mr-1"></i> Giờ đón dự kiến: <b>{{ \Carbon\Carbon::parse($item->pickup_time)->format('H:i') }}</b></div>
+                    @endif
+                </div>
+            </div>
+            @endif
 
-                                                            @elseif($item->paymentstatus == 'paid')
-                                                                {{-- 2. ĐÃ THANH TOÁN 100% --}}
-                                                                <div class="position-absolute d-flex flex-column align-items-center justify-content-center" 
-                                                                    style="top: 50%; left: 50%; transform: translate(-50%, -50%) rotate(-15deg); opacity: 0.08; pointer-events: none; z-index: 0;">
-                                                                    <i class="fa-solid fa-stamp text-success mb-1" style="font-size: 5rem;"></i>
-                                                                    <span class="text-success font-weight-bold" style="font-size: 1.5rem; letter-spacing: 2px;">PAID IN FULL</span>
-                                                                </div>
+            {{-- TỔNG CỘNG --}}
+            <div class="d-flex justify-content-between mt-2 pt-2 border-top">
+                <span class="text-dark font-weight-bold">TỔNG CỘNG:</span>
+                <span class="font-weight-bold text-primary" style="font-size: 1.2rem;">{{ number_format($item->totalprice) }} đ</span>
+            </div>
 
-                                                                <div class="position-relative" style="z-index: 1;">
-                                                                    <div class="d-flex justify-content-between mb-2 border-bottom pb-2">
-                                                                        <span class="text-muted">Phương thức:</span>
-                                                                        <span class="font-weight-bold text-uppercase">
-                                                                            @php $method = strtolower($item->paymentmethod); @endphp
-                                                                            @if($method == 'momo') <span class="text-pink" style="color: #a50064;"><i class="fa-solid fa-wallet mr-1"></i> Ví MoMo</span>
-                                                                            @elseif($method == 'cash' || $method == 'tien mat') <span class="text-success"><i class="fa-solid fa-money-bill-wave mr-1"></i> Tiền mặt</span>
-                                                                            @else <span class="text-info">{{ $item->paymentmethod ?? 'Chưa rõ' }}</span> @endif
-                                                                        </span>
-                                                                    </div>
-                                                                    <div class="d-flex justify-content-between mb-2">
-                                                                        <span class="text-muted">Tổng cộng (Giá trị Tour):</span>
-                                                                        <span class="font-weight-bold">{{ number_format($item->totalprice) }} đ</span>
-                                                                    </div>
-                                                                    <div class="d-flex justify-content-between mb-2">
-                                                                        <span class="text-muted">Đã thanh toán:</span>
-                                                                        <span class="font-weight-bold text-success">- {{ number_format($item->totalprice) }} đ</span>
-                                                                    </div>
-                                                                    <div class="d-flex justify-content-between mt-2 pt-2 border border-success p-2 rounded" style="background-color: #f0fdf4;">
-                                                                        <span class="text-success font-weight-bold"><i class="fa-solid fa-circle-check mr-1"></i> TOÀN BỘ</span>
-                                                                        <span class="font-weight-bold text-success" style="font-size: 1.1rem;">0 đ</span>
-                                                                    </div>
-                                                                </div>
 
-                                                            @elseif($item->paymentstatus == 'deposit_paid')
-                                                                {{-- 3. ĐÃ THANH TOÁN CỌC --}}
-                                                                <div class="position-relative" style="z-index: 1;">
-                                                                    <div class="d-flex justify-content-between mb-2 border-bottom pb-2">
-                                                                        <span class="text-muted">Phương thức:</span>
-                                                                        <span class="font-weight-bold text-uppercase">
-                                                                            @php $method = strtolower($item->paymentmethod); @endphp
-                                                                            @if($method == 'momo') <span class="text-pink" style="color: #a50064;"><i class="fa-solid fa-wallet mr-1"></i> Ví MoMo</span>
-                                                                            @elseif($method == 'cash' || $method == 'tien mat') <span class="text-success"><i class="fa-solid fa-money-bill-wave mr-1"></i> Tiền mặt</span>
-                                                                            @else <span class="text-info">{{ $item->paymentmethod ?? 'Chưa rõ' }}</span> @endif
-                                                                        </span>
-                                                                    </div>
-                                                                    <div class="d-flex justify-content-between mb-2">
-                                                                        <span class="text-muted">Tổng cộng (Giá trị Tour):</span>
-                                                                        <span class="font-weight-bold">{{ number_format($item->totalprice) }} đ</span>
-                                                                    </div>
-                                                                    <div class="d-flex justify-content-between mb-2">
-                                                                        <span class="text-muted">Đã thanh toán (Cọc):</span>
-                                                                        <span class="font-weight-bold text-success">- {{ number_format($item->deposit_amount ?? 0) }} đ</span>
-                                                                    </div>
-                                                                    <div class="d-flex justify-content-between mt-2 pt-2 border-top bg-light p-2 rounded">
-                                                                        <span class="text-dark font-weight-bold">CÒN LẠI:</span>
-                                                                        @php $remaining = $item->totalprice - ($item->deposit_amount ?? 0); @endphp
-                                                                        <span class="font-weight-bold text-danger" style="font-size: 1.1rem;">
-                                                                            {{ number_format($remaining) }} đ
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
+            {{-- ========================================== --}}
+            {{-- PHẦN 2: TÌNH TRẠNG THANH TOÁN --}}
+            {{-- ========================================== --}}
+            <h6 class="font-weight-bold text-dark border-bottom pb-2 mt-4 mb-3"><i class="fa-solid fa-credit-card mr-1"></i> Tình trạng thanh toán</h6>
+            
+            <div class="d-flex justify-content-between mb-3">
+                <span class="text-muted">Phương thức:</span>
+                <span class="font-weight-bold text-uppercase">
+                    @php $method = strtolower($item->paymentmethod); @endphp
+                    @if($method == 'momo') <span class="text-pink" style="color: #a50064;"><i class="fa-solid fa-wallet mr-1"></i> Ví MoMo</span>
+                    @elseif($method == 'cash' || $method == 'tien mat') <span class="text-success"><i class="fa-solid fa-money-bill-wave mr-1"></i> Tiền mặt</span>
+                    @else <span class="text-info">{{ $item->paymentmethod ?? 'Chưa rõ' }}</span> @endif
+                </span>
+            </div>
 
-                                                            @else
-                                                                {{-- 4. CHƯA THANH TOÁN (UNPAID) --}}
-                                                                <div class="position-relative" style="z-index: 1;">
-                                                                    <div class="d-flex justify-content-between mb-2 border-bottom pb-2">
-                                                                        <span class="text-muted">Phương thức:</span>
-                                                                        <span class="font-weight-bold text-uppercase">
-                                                                            @php $method = strtolower($item->paymentmethod); @endphp
-                                                                            @if($method == 'momo') <span class="text-pink" style="color: #a50064;"><i class="fa-solid fa-wallet mr-1"></i> Ví MoMo</span>
-                                                                            @elseif($method == 'cash' || $method == 'tien mat') <span class="text-success"><i class="fa-solid fa-money-bill-wave mr-1"></i> Tiền mặt</span>
-                                                                            @else <span class="text-info">{{ $item->paymentmethod ?? 'Chưa rõ' }}</span> @endif
-                                                                        </span>
-                                                                    </div>
-                                                                    <div class="d-flex justify-content-between mb-2">
-                                                                        <span class="text-muted">Tổng cộng (Giá trị Tour):</span>
-                                                                        <span class="font-weight-bold">{{ number_format($item->totalprice) }} đ</span>
-                                                                    </div>
-                                                                    <div class="d-flex justify-content-between mb-2">
-                                                                        <span class="text-muted">Yêu cầu cọc (30%):</span>
-                                                                        <span class="font-weight-bold text-warning">{{ number_format($item->deposit_amount ?? 0) }} đ</span>
-                                                                    </div>
-                                                                    <div class="d-flex justify-content-between mb-2">
-                                                                        <span class="text-muted">Đã thanh toán:</span>
-                                                                        <span class="font-weight-bold text-secondary">0 đ</span>
-                                                                    </div>
-                                                                    <div class="d-flex justify-content-between mt-2 pt-2 border-top bg-light p-2 rounded">
-                                                                        <span class="text-dark font-weight-bold">CÒN LẠI:</span>
-                                                                        <span class="font-weight-bold text-danger" style="font-size: 1.1rem;">
-                                                                            {{ number_format($item->totalprice) }} đ
-                                                                        </span>
-                                                                    </div>
-                                                                </div>
-                                                            @endif
+            {{-- LOGIC THEO TRẠNG THÁI --}}
+            @if($item->bookingstatus == 'cancelled')
+                {{-- 1. HỦY TOUR --}}
+                @php
+                    $paid = $item->paid_amount ?? 0;
+                    $refund = 0;
+                    if($paid > 0 && isset($item->startdate)) {
+                        $daysToStart = (strtotime($item->startdate) - strtotime($item->bookingdate)) / 86400; 
+                        $refundable_amount = $paid - ($item->pickup_fee_total ?? 0);
+                        if($refundable_amount < 0) $refundable_amount = 0;
+                        if ($daysToStart >= 5) $refund = $refundable_amount; 
+                        elseif ($daysToStart >= 2) $refund = $refundable_amount * 0.5;
+                    }
+                @endphp
+                
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Đã thanh toán:</span>
+                    <span class="font-weight-bold">{{ number_format($paid) }} đ</span>
+                </div>
+                
+                @if($refund > 0)
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Khấu trừ phụ phí/Hủy:</span>
+                        <span class="text-danger">- {{ number_format($paid - $refund) }} đ</span>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2 pb-2 border-bottom">
+                        <span class="text-muted font-weight-bold">Sẽ hoàn trả khách:</span>
+                        <span class="font-weight-bold text-info" style="font-size: 1.1rem;">+ {{ number_format($refund) }} đ</span>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-2 pt-2 border border-danger p-2 rounded" style="background-color: #fef2f2;">
+                        <span class="text-danger font-weight-bold"><i class="fa-solid fa-rotate-left mr-1"></i> TRẠNG THÁI:</span>
+                        <span class="font-weight-bold text-danger">
+                            @if($item->paymentstatus == 'refunded') <span class="text-success"><i class="fa-solid fa-check-circle mr-1"></i> Đã hoàn tiền</span>
+                            @elseif($item->paymentstatus == 'refund_pending') Đang chờ hoàn tiền
+                            @else Đã hủy đơn @endif
+                        </span>
+                    </div>
+                    <div class="mt-2 text-muted" style="font-size: 0.75rem; font-style: italic;">
+                        * Lưu ý: Tiền hoàn không bao gồm phụ phí xe (nếu có) và áp dụng theo quy định hủy trước ngày đi.
+                    </div>
+                @else
+                    <div class="d-flex justify-content-between mt-2 pt-2 border border-secondary p-2 rounded bg-light">
+                        <span class="text-secondary font-weight-bold"><i class="fa-solid fa-circle-xmark mr-1"></i> TRẠNG THÁI:</span>
+                        <span class="font-weight-bold text-secondary">Hủy không hoàn tiền</span>
+                    </div>
+                    @if($paid > 0)
+                    <div class="mt-2 text-muted" style="font-size: 0.75rem; font-style: italic;">
+                        * Lưu ý: Theo chính sách, tour hủy sát ngày khởi hành sẽ không được hoàn lại tiền đã đóng.
+                    </div>
+                    @endif
+                @endif
 
-                                                        </div>
-                                                    </div>
+            @elseif($item->paymentstatus == 'paid')
+                {{-- 2. TRẢ 100% --}}
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Đã thanh toán (100%):</span>
+                    <span class="font-weight-bold text-success">- {{ number_format($item->totalprice) }} đ</span>
+                </div>
+                <div class="d-flex justify-content-between mt-2 pt-2 border border-success p-2 rounded" style="background-color: #f0fdf4;">
+                    <span class="text-success font-weight-bold"><i class="fa-solid fa-circle-check mr-1"></i> CÒN LẠI:</span>
+                    <span class="font-weight-bold text-success" style="font-size: 1.1rem;">0 đ</span>
+                </div>
+
+            @elseif($item->paymentstatus == 'deposit_paid')
+                {{-- 3. ĐÃ CỌC --}}
+                <div class="d-flex justify-content-between mb-2 border-bottom pb-2">
+                    <span class="text-muted">Đã đặt cọc:</span>
+                    <span class="font-weight-bold text-success">- {{ number_format($item->deposit_amount ?? 0) }} đ</span>
+                </div>
+                <div class="d-flex justify-content-between mt-2 pt-2 bg-light p-2 rounded border">
+                    <span class="text-dark font-weight-bold">CÒN LẠI PHẢI THU:</span>
+                    <span class="font-weight-bold text-danger" style="font-size: 1.1rem;">
+                        {{ number_format($item->totalprice - ($item->deposit_amount ?? 0)) }} đ
+                    </span>
+                </div>
+                <div class="mt-2 text-muted" style="font-size: 0.75rem; font-style: italic;">
+                    * Vui lòng thanh toán số dư còn lại trước ngày khởi hành để nhận vé lên xe.
+                </div>
+
+            @else
+                {{-- 4. CHƯA THANH TOÁN --}}
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Yêu cầu cọc (30%):</span>
+                    <span class="font-weight-bold text-warning">{{ number_format($item->deposit_amount ?? 0) }} đ</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2 border-bottom pb-2">
+                    <span class="text-muted">Đã thanh toán:</span>
+                    <span class="font-weight-bold text-secondary">0 đ</span>
+                </div>
+                <div class="d-flex justify-content-between mt-2 pt-2 bg-light p-2 rounded border border-danger">
+                    <span class="text-danger font-weight-bold">CHƯA THANH TOÁN:</span>
+                    <span class="font-weight-bold text-danger" style="font-size: 1.1rem;">
+                        {{ number_format($item->totalprice) }} đ
+                    </span>
+                </div>
+            @endif
+            
+        </div>
+    </div>
+</div>
 {{-- KẾT THÚC CỘT 2 --}}
                                                 </div>
                                                 
