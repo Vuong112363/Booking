@@ -11,6 +11,7 @@ use App\Models\TourImage;
 use App\Models\Booking;
 use App\Models\Admin\TourSchedule;
 
+
 class TourController extends Controller
 {
     // Cấu hình đường dẫn ảnh để dễ quản lý và thay đổi sau này
@@ -44,7 +45,25 @@ class TourController extends Controller
                        ->orderBy('tourid', 'desc')
                        ->paginate(10);
 
-        return view('admin.tours.index', compact('tours'));
+        // =========================================================
+        // THỐNG KÊ DỮ LIỆU TOÀN CỤC (Không bị giới hạn bởi phân trang)
+        // =========================================================
+        $totalTours = Tour::count();
+        $activeTours = Tour::where('availability', 1)->count();
+        $suspendedTours = Tour::where('availability', 0)->count();
+        
+        // Đếm số đợt khởi hành từ hôm nay trở đi
+        $upcomingTours = \DB::table('tbl_tour_schedules')
+                            ->where('startdate', '>=', now()->toDateString())
+                            ->count();
+
+        return view('admin.tours.index', compact(
+            'tours', 
+            'totalTours', 
+            'activeTours', 
+            'suspendedTours', 
+            'upcomingTours'
+        ));
     }
 
     public function create()
@@ -298,6 +317,66 @@ public function deleteSchedule($id)
         if ($filename) {
             $path = public_path($this->imagePath . '/' . $filename);
             if (File::exists($path)) File::close(File::delete($path));
+        }
+    }
+    public function delete(Request $request, $id)
+    {
+        try {
+            // 1. Kiểm tra xem Tour có tồn tại không
+            $tour = DB::table('tbl_tours')->where('tourid', $id)->first();
+
+            if (!$tour) {
+                if ($request->ajax()) {
+                    return response()->json(['success' => false, 'message' => 'Không tìm thấy tour cần xóa!'], 404);
+                }
+                return back()->with('error', 'Không tìm thấy tour cần xóa!');
+            }
+
+            // ==============================================================
+            // 2. LỚP BẢO VỆ: KIỂM TRA TOUR ĐÃ CÓ NGƯỜI ĐẶT CHƯA?
+            // ==============================================================
+            $hasBookings = DB::table('tbl_bookings')->where('tourid', $id)->exists();
+            
+            if ($hasBookings) {
+                $errorMsg = 'Không thể xóa! Tour này đã có khách hàng đặt chỗ. Vui lòng gạt nút chuyển sang trạng thái "Tạm ngưng" để bảo toàn lịch sử giao dịch.';
+                
+                if ($request->ajax()) {
+                    // Trả về lỗi 400 để Ajax SweetAlert2 bắt được và hiện màu đỏ
+                    return response()->json(['success' => false, 'message' => $errorMsg], 400);
+                }
+                return back()->with('error', $errorMsg);
+            }
+            // ==============================================================
+
+            // 3. Xóa file ảnh chính vật lý (tránh bị rác ổ cứng)
+            if (!empty($tour->images) && file_exists(public_path('clients/assets/images/gallery-tours/' . $tour->images))) {
+                @unlink(public_path('clients/assets/images/gallery-tours/' . $tour->images));
+            }
+
+            // 4. Xóa các file ảnh Gallery vật lý
+            $gallery = DB::table('tbl_images')->where('tourid', $id)->get();
+            foreach ($gallery as $img) {
+                if (!empty($img->imageurl) && file_exists(public_path('clients/assets/images/gallery-tours/' . $img->imageurl))) {
+                    @unlink(public_path('clients/assets/images/gallery-tours/' . $img->imageurl));
+                }
+            }
+
+            // 5. Xóa Tour khỏi Database (Lúc này an toàn 100% vì không có đơn hàng nào bị vướng)
+            DB::table('tbl_tours')->where('tourid', $id)->delete();
+
+            // 6. Trả kết quả về cho giao diện
+            if ($request->ajax()) {
+                return response()->json(['success' => true, 'message' => 'Đã xóa tour thành công!']);
+            }
+            return redirect()->route('admin.tours.index')->with('success', 'Đã xóa tour thành công!');
+
+        } catch (\Exception $e) {
+            \Log::error('Lỗi khi xóa tour: ' . $e->getMessage());
+            
+            if ($request->ajax()) {
+                return response()->json(['success' => false, 'message' => 'Lỗi hệ thống: Tham chiếu dữ liệu không hợp lệ!'], 500);
+            }
+            return back()->with('error', 'Lỗi hệ thống: Không thể xóa tour này.');
         }
     }
 }

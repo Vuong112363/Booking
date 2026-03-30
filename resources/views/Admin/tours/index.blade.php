@@ -28,7 +28,7 @@
                     <span class="info-box-icon bg-info elevation-1"><i class="fas fa-map-marked-alt"></i></span>
                     <div class="info-box-content">
                         <span class="info-box-text">Tổng số Tour</span>
-                        <span class="info-box-number">{{ $tours->total() }}</span>
+                        <span class="info-box-number h5 mb-0">{{ $totalTours }}</span>
                     </div>
                 </div>
             </div>
@@ -37,10 +37,7 @@
                     <span class="info-box-icon bg-success elevation-1"><i class="fas fa-check-circle"></i></span>
                     <div class="info-box-content">
                         <span class="info-box-text">Đang mở bán</span>
-                        <span class="info-box-number">
-                            {{-- Giả sử bạn có biến thống kê từ controller truyền qua --}}
-                            {{ $tours->where('availability', 1)->count() }} 
-                        </span>
+                        <span class="info-box-number h5 mb-0">{{ $activeTours }}</span>
                     </div>
                 </div>
             </div>
@@ -49,7 +46,7 @@
                     <span class="info-box-icon bg-warning elevation-1"><i class="fas fa-calendar-day"></i></span>
                     <div class="info-box-content">
                         <span class="info-box-text">Khởi hành sắp tới</span>
-                        <span class="info-box-number">Mới</span>
+                        <span class="info-box-number h5 mb-0 text-danger">{{ $upcomingTours }} <small class="text-muted">chuyến</small></span>
                     </div>
                 </div>
             </div>
@@ -58,7 +55,7 @@
                     <span class="info-box-icon bg-danger elevation-1"><i class="fas fa-exclamation-circle"></i></span>
                     <div class="info-box-content">
                         <span class="info-box-text">Hết chỗ/Tạm ngưng</span>
-                        <span class="info-box-number">{{ $tours->where('availability', 0)->count() }}</span>
+                        <span class="info-box-number h5 mb-0">{{ $suspendedTours }}</span>
                     </div>
                 </div>
             </div>
@@ -332,13 +329,65 @@
 </style>
 @stop
 
-
 @section('js')
-    @section('js')
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
     <script>
+        // ==============================================================
+        // 1. HỨNG THÔNG BÁO TỪ CONTROLLER (Sau khi Thêm, Sửa, Xóa)
+        // ==============================================================
+        @if(session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Thành công!',
+                text: '{{ session('success') }}',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+            });
+        @endif
+
+        @if(session('error'))
+            Swal.fire({
+                icon: 'error',
+                title: 'Thất bại!',
+                text: '{{ session('error') }}',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 4000,
+                timerProgressBar: true,
+            });
+        @endif
+
+        // ==============================================================
+        // 2. CÁC TÍNH NĂNG TƯƠNG TÁC TRÊN TRANG (Gạt trạng thái, Xóa tour)
+        // ==============================================================
         $(function () {
-            // 1. Xử lý nút gạt Bật/Tắt
+            // Nâng cấp nút Xóa bằng SweetAlert2 thay vì dùng confirm() cũ
+            $('.btn-delete-tour').on('click', function(e) {
+                e.preventDefault(); // Ngăn form submit ngay lập tức
+                let form = $(this).closest('form');
+                
+                Swal.fire({
+                    title: 'Bạn có chắc chắn?',
+                    text: "Tour này và toàn bộ dữ liệu (lịch trình, điểm đón, ảnh) sẽ bị xóa vĩnh viễn!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Vâng, xóa ngay!',
+                    cancelButtonText: 'Hủy bỏ'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        form.submit(); // Nếu đồng ý thì mới submit form để xóa
+                    }
+                });
+            });
+
+            // Xử lý nút gạt Bật/Tắt trạng thái
             $('.toggle-availability').change(function() {
                 let status = $(this).prop('checked') ? 1 : 0;
                 let tourId = $(this).data('id');
@@ -348,7 +397,7 @@
                 $.ajax({
                     type: "POST",
                     dataType: "json",
-                    url: "{{ route('admin.tours.toggle') }}",
+                    url: "{{ route('admin.tours.toggle') }}", // Phải đảm bảo route này đã tồn tại trong web.php
                     data: {
                         '_token': '{{ csrf_token() }}',
                         'status': status,
@@ -370,24 +419,25 @@
                             timer: 2000
                         }).fire({
                             icon: 'success',
-                            title: data.message
+                            title: data.message || 'Đã cập nhật trạng thái!'
                         });
                     },
                     error: function() {
-                        // Nếu lỗi thì gạt ngược nút lại và báo lỗi
                         checkbox.prop('checked', !checkbox.prop('checked'));
-                        alert('Không thể kết nối đến máy chủ!');
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Lỗi',
+                            text: 'Không thể kết nối đến máy chủ!',
+                            toast: true,
+                            position: 'top-end',
+                            showConfirmButton: false,
+                            timer: 3000
+                        });
                     }
                 });
             });
 
-            // 2. Tooltip & Auto close alert cũ của bạn
             $('[data-toggle="tooltip"]').tooltip();
-            window.setTimeout(function() {
-                $(".alert").fadeTo(500, 0).slideUp(500, function(){
-                    $(this).remove(); 
-                });
-            }, 4000);
         });
     </script>
 @stop

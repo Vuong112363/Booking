@@ -3,6 +3,8 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\View;
+use App\Models\Clients\Tours;
 use Illuminate\Pagination\Paginator;
 use Illuminate\Support\Facades\Config;
 use App\Models\Admin\Setting;
@@ -51,5 +53,19 @@ public function boot(): void
     } catch (\Exception $e) {
         // Tránh lỗi khi chạy migrate
     }
+    // TỰ ĐỘNG TRUYỀN BIẾN CHO SIDEBAR TOUR
+        View::composer(
+        ['Clients.blocks.sidebar-tour', 'clients.blocks.sidebar-tour', 'clients.blocks.sidebar_tour'], 
+        function ($view) {
+            $popularWidgetTours = \App\Models\Clients\Tours::where('availability', 1)
+                                      ->with('schedules')
+                                      ->inRandomOrder() 
+                                      ->take(1)
+                                      ->get();
+
+            $view->with('popularWidgetTours', $popularWidgetTours);
+        }
+    );
+    }
 }
-}
+

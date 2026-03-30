@@ -221,25 +221,37 @@
             </div>
             
             <div class="accordion" id="timeline-wrapper">
-                @foreach($tour->timeline as $index => $item)
-                    <div class="card card-outline card-secondary mb-2 timeline-item">
-                        <div class="card-header p-2">
-                            <div class="d-flex justify-content-between align-items-center">
-                                <button class="btn btn-link text-left text-dark font-weight-bold flex-grow-1 text-decoration-none" type="button" data-toggle="collapse" data-target="#collapse-{{ $index }}">
-                                    <i class="fas fa-angle-down mr-2 text-muted"></i> Ngày <span class="day-number">{{ $index + 1 }}</span>: <span class="preview-title text-primary">{{ $item->title }}</span>
-                                </button>
-                                <button type="button" class="btn btn-sm btn-outline-danger border-0" onclick="removeTimeline(this)"><i class="fas fa-trash"></i></button>
-                            </div>
-                        </div>
-                        <div id="collapse-{{ $index }}" class="collapse {{ $index == 0 ? 'show' : '' }}" data-parent="#timeline-wrapper">
-                            <div class="card-body bg-light">
-                                <input type="text" name="timeline_title[]" class="form-control title-input mb-2" value="{{ $item->title }}" required onkeyup="updatePreviewTitle(this)">
-                                <textarea name="timeline_description[]" class="form-control" rows="4">{{ $item->description }}</textarea>
-                            </div>
-                        </div>
-                    </div>
-                @endforeach
+    @foreach($tour->timeline as $index => $item)
+        <div class="card card-outline card-secondary mb-3 timeline-item shadow-sm border animate__animated animate__fadeIn">
+            <div class="card-header p-2 bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <button class="btn btn-link text-left text-dark font-weight-bold flex-grow-1 text-decoration-none" type="button" data-toggle="collapse" data-target="#collapse-{{ $index }}">
+                        <i class="fas fa-angle-down mr-2 text-primary"></i> 
+                        Ngày <span class="day-number">{{ $index + 1 }}</span>: 
+                        <span class="preview-title text-primary">{{ $item->title }}</span>
+                    </button>
+                    <button type="button" class="btn btn-sm btn-danger border-0 shadow-sm" onclick="removeTimeline(this)" title="Xóa ngày này">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
             </div>
+
+            <div id="collapse-{{ $index }}" class="collapse {{ $index == 0 ? 'show' : '' }}" data-parent="#timeline-wrapper">
+                <div class="card-body">
+                    <div class="form-group">
+                        <label class="text-muted small">Tiêu đề hành trình (VD: Hà Nội - Sapa - Bản Cát Cát)</label>
+                        <input type="text" name="timeline_title[]" class="form-control title-input font-weight-bold" value="{{ $item->title }}" required onkeyup="updatePreviewTitle(this)">
+                    </div>
+                    <div class="form-group mb-0">
+                        <label class="text-muted small">Mô tả chi tiết (Các bữa ăn, điểm tham quan, hoạt động...)</label>
+                        {{-- THÊM CLASS timeline-editor VÀO ĐÂY ĐỂ HIỂN THỊ CKEDITOR CHO DỮ LIỆU CŨ --}}
+                        <textarea name="timeline_description[]" class="form-control timeline-editor" rows="4">{{ $item->description }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endforeach
+</div>
             <div class="row mt-4">
     {{-- Cột: Dịch vụ bao gồm --}}
     <div class="col-md-6 border-right">
@@ -364,13 +376,38 @@
         .old-image-wrapper img { border: 1px solid #ddd; padding: 2px; background: #fff; }
     </style>
 @stop
-
 @section('js')
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
-    <script>
-        ClassicEditor.create(document.querySelector('#editor')).catch(error => { console.error(error); });
 
-        // AJAX THÊM LỊCH TRÌNH
+    <script>
+        // ================= TOAST CONFIG =================
+        const Toast = Swal.mixin({
+            toast: true,
+            position: 'top-end',
+            showConfirmButton: false,
+            timer: 2500,
+            timerProgressBar: true
+        });
+
+        // ================= ALERT SESSION =================
+        @if(session('success'))
+            Toast.fire({ icon: 'success', title: '{{ session('success') }}' });
+        @endif
+
+        @if(session('error'))
+            Toast.fire({ icon: 'error', title: '{{ session('error') }}' });
+        @endif
+
+        // ================= CKEDITOR INIT =================
+        ClassicEditor.create(document.querySelector('#editor')).catch(error => console.error(error));
+
+        // Khởi tạo CKEditor cho các ô Timeline đã có sẵn
+        document.querySelectorAll('.timeline-editor').forEach((el) => {
+            ClassicEditor.create(el).catch(error => console.error(error));
+        });
+
+        // ================= THÊM LỊCH TRÌNH =================
         $('#btn-save-schedule').on('click', function() {
             const data = {
                 _token: "{{ csrf_token() }}",
@@ -383,7 +420,7 @@
             };
 
             if(!data.startdate || !data.priceadult) {
-                alert('Vui lòng nhập ngày khởi hành và giá người lớn!');
+                Swal.fire('Thiếu dữ liệu!', 'Vui lòng nhập ngày và giá!', 'warning');
                 return;
             }
 
@@ -393,106 +430,188 @@
                 data: data,
                 success: function(res) {
                     if(res.success) {
-                        alert('Đã thêm thành công!');
-                        location.reload();
+                        $('#modal-add-schedule').modal('hide');
+                        Toast.fire({ icon: 'success', title: 'Đã thêm lịch trình!' });
+                        setTimeout(() => location.reload(), 1000);
                     }
                 },
-                error: function(err) { alert('Lỗi: ' + err.responseJSON.message); }
+                error: function(err) {
+                    Toast.fire({ icon: 'error', title: 'Lỗi: ' + err.responseJSON.message });
+                }
             });
         });
 
+        // ================= XÓA LỊCH TRÌNH =================
         function deleteSchedule(id) {
-            if(confirm('Bạn có chắc muốn xóa đợt này?')) {
-                $.ajax({
-                    url: "/admin/tours/schedule/delete/" + id,
-                    method: "DELETE",
-                    data: { _token: "{{ csrf_token() }}" },
-                    success: function(res) {
-                        if(res.success) $(`#sch-row-${id}`).fadeOut();
-                    },
-                    error: function(err) { alert(err.responseJSON.message); }
-                });
-            }
+            Swal.fire({
+                title: 'Xóa lịch trình?',
+                text: "Không thể hoàn tác!",
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                cancelButtonText: 'Hủy',
+                confirmButtonText: 'Xóa ngay'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $.ajax({
+                        url: "/admin/tours/schedule/delete/" + id,
+                        method: "DELETE",
+                        data: { _token: "{{ csrf_token() }}" },
+                        success: function(res) {
+                            if(res.success) {
+                                $(`#sch-row-${id}`).fadeOut();
+                                Toast.fire({ icon: 'success', title: 'Đã xóa lịch!' });
+                            }
+                        },
+                        error: function(err) {
+                            Toast.fire({ icon: 'error', title: err.responseJSON.message });
+                        }
+                    });
+                }
+            });
         }
 
-        // XỬ LÝ ẢNH & TIMELINE
+        // ================= XÓA ẢNH =================
         function removeOldImage(imageId, btnElement) {
-            if(confirm('Xóa ảnh này?')) {
-                $('#tour-form').append(`<input type="hidden" name="delete_images[]" value="${imageId}">`);
-                $(btnElement).closest('.old-image-wrapper').remove();
-            }
+            Swal.fire({
+                title: 'Xóa ảnh?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Xóa',
+                cancelButtonText: 'Hủy'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    $('#tour-form').append(`<input type="hidden" name="delete_images[]" value="${imageId}">`);
+                    $(btnElement).closest('.old-image-wrapper').remove();
+                    Toast.fire({ icon: 'success', title: 'Đã xóa ảnh!' });
+                }
+            });
         }
 
+        // ================= TIMELINE =================
         function addTimeline() {
             const wrapper = document.getElementById('timeline-wrapper');
             const count = wrapper.querySelectorAll('.timeline-item').length + 1;
             const uniqueId = Date.now(); 
+
             const html = `
-            <div class="card card-outline card-secondary mb-2 timeline-item">
-                <div class="card-header p-2">
+            <div class="card card-outline card-secondary mb-3 timeline-item shadow-sm border animate__animated animate__fadeIn">
+                <div class="card-header p-2 bg-light">
                     <div class="d-flex justify-content-between align-items-center">
-                        <button class="btn btn-link text-left text-dark font-weight-bold flex-grow-1" type="button" data-toggle="collapse" data-target="#collapse-${uniqueId}">
-                            Ngày <span class="day-number">${count}</span>: <span class="preview-title text-primary">Tiêu đề mới...</span>
+                        <button class="btn btn-link text-left text-dark font-weight-bold flex-grow-1 text-decoration-none" type="button" data-toggle="collapse" data-target="#collapse-${uniqueId}">
+                            <i class="fas fa-angle-down mr-2 text-primary"></i> Ngày <span class="day-number">${count}</span>: 
+                            <span class="preview-title text-primary">Tiêu đề mới...</span>
                         </button>
-                        <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeTimeline(this)"><i class="fas fa-trash"></i></button>
+                        <button type="button" class="btn btn-sm btn-danger border-0 shadow-sm" onclick="removeTimeline(this)">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
                     </div>
                 </div>
                 <div id="collapse-${uniqueId}" class="collapse show" data-parent="#timeline-wrapper">
-                    <div class="card-body bg-light">
-                        <input type="text" name="timeline_title[]" class="form-control title-input mb-2" onkeyup="updatePreviewTitle(this)" required>
-                        <textarea name="timeline_description[]" class="form-control" rows="4"></textarea>
+                    <div class="card-body">
+                        <div class="form-group">
+                            <label class="text-muted small">Tiêu đề hành trình</label>
+                            <input type="text" name="timeline_title[]" class="form-control title-input font-weight-bold" onkeyup="updatePreviewTitle(this)" required>
+                        </div>
+                        <div class="form-group mb-0">
+                            <label class="text-muted small">Mô tả chi tiết</label>
+                            <textarea id="editor-${uniqueId}" name="timeline_description[]" class="form-control"></textarea>
+                        </div>
                     </div>
                 </div>
             </div>`;
+            
             wrapper.insertAdjacentHTML('beforeend', html);
+
+            // Gắn CKEditor cho ô vừa tạo
+            ClassicEditor.create(document.querySelector(`#editor-${uniqueId}`)).catch(error => console.error(error));
+            
+            // Hiện thông báo thành công
+            Toast.fire({ icon: 'success', title: 'Đã thêm ngày mới' });
+
+            // Cuộn chuột xuống từ từ
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
         }
 
-        function removeTimeline(btn) { 
-            if(confirm('Xóa ngày này?')) {
-                btn.closest('.timeline-item').remove(); 
-                document.querySelectorAll('.timeline-item').forEach((item, index) => {
-                    item.querySelector('.day-number').textContent = index + 1;
-                });
-            }
+        function removeTimeline(btn) {
+            Swal.fire({
+                title: 'Xóa ngày này?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: '#d33',
+                confirmButtonText: 'Xóa',
+                cancelButtonText: 'Hủy'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    btn.closest('.timeline-item').remove();
+                    // Đánh lại số thứ tự Ngày
+                    document.querySelectorAll('.timeline-item').forEach((item, index) => {
+                        item.querySelector('.day-number').textContent = index + 1;
+                    });
+                    Toast.fire({ icon: 'success', title: 'Đã xóa ngày!' });
+                }
+            });
         }
 
         function updatePreviewTitle(input) {
             const preview = input.closest('.timeline-item').querySelector('.preview-title');
-            preview.textContent = input.value || 'Tiêu đề...';
+            preview.textContent = input.value || 'Đang cập nhật...';
         }
 
-        
+        // ================= PICKUP =================
         function addPickupRow() {
             let html = `
             <tr>
-                <td><input type="text" name="pk_name[]" class="form-control" placeholder="Nhập tên điểm..." required></td>
+                <td><input type="text" name="pk_name[]" class="form-control" required></td>
                 <td><input type="time" name="pk_time[]" class="form-control" required></td>
                 <td><input type="number" name="pk_price[]" class="form-control" value="0"></td>
                 <td>
                     <select name="pk_type[]" class="form-control">
                         <option value="0">Mỗi khách</option>
-                        <option value="1">Cả đoàn (Cố định)</option>
+                        <option value="1">Cả đoàn</option>
                     </select>
                 </td>
-                <td><button type="button" class="btn btn-danger btn-sm" onclick="$(this).closest('tr').remove()"><i class="fas fa-trash"></i></button></td>
+                <td>
+                    <button type="button" class="btn btn-danger btn-sm" onclick="$(this).closest('tr').remove()">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
             </tr>`;
             $('#pickup-container').append(html);
+            Toast.fire({ icon: 'success', title: 'Đã thêm điểm đón' });
         }
-    </script>
-<script>
-// Hàm thêm hàng loạt từ Textarea
-function handleBulkAdd(textareaId, containerId, inputName) {
-    const textarea = document.getElementById(textareaId);
-    const container = document.getElementById(containerId);
-    const lines = textarea.value.split('\n'); // Tách theo dòng
 
-    lines.forEach(line => {
-        const cleanLine = line.trim();
-        if (cleanLine !== "") {
+        // ================= BULK INCLUDE / EXCLUDE =================
+        function handleBulkAdd(textareaId, containerId, inputName) {
+            const textarea = document.getElementById(textareaId);
+            const container = document.getElementById(containerId);
+            const lines = textarea.value.split('\n');
+
+            lines.forEach(line => {
+                const cleanLine = line.trim();
+                if (cleanLine !== "") {
+                    const div = document.createElement('div');
+                    div.className = 'input-group mb-2 animate__animated animate__fadeInIn';
+                    div.innerHTML = `
+                        <input type="text" name="${inputName}" class="form-control" value="${cleanLine}">
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.parentElement.remove()">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    `;
+                    container.appendChild(div);
+                }
+            });
+            textarea.value = "";
+        }
+
+        function addNewRow(containerId, inputName) {
+            const container = document.getElementById(containerId);
             const div = document.createElement('div');
-            div.className = 'input-group mb-2 animate__animated animate__fadeInIn'; // Thêm hiệu ứng nếu có animate.css
+            div.className = 'input-group mb-2';
             div.innerHTML = `
-                <input type="text" name="${inputName}" class="form-control" value="${cleanLine}">
+                <input type="text" name="${inputName}" class="form-control" placeholder="Nhập nội dung...">
                 <div class="input-group-append">
                     <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.parentElement.remove()">
                         <i class="fas fa-times"></i>
@@ -501,25 +620,5 @@ function handleBulkAdd(textareaId, containerId, inputName) {
             `;
             container.appendChild(div);
         }
-    });
-
-    textarea.value = ""; // Xóa trắng textarea sau khi thêm xong
-}
-
-// Giữ lại hàm thêm 1 dòng cũ cho nhu cầu nhập lẻ
-function addNewRow(containerId, inputName) {
-    const container = document.getElementById(containerId);
-    const div = document.createElement('div');
-    div.className = 'input-group mb-2';
-    div.innerHTML = `
-        <input type="text" name="${inputName}" class="form-control" placeholder="Nhập nội dung...">
-        <div class="input-group-append">
-            <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.parentElement.remove()">
-                <i class="fas fa-times"></i>
-            </button>
-        </div>
-    `;
-    container.appendChild(div);
-}
-</script>
+    </script>
 @stop

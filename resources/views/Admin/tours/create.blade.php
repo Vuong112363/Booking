@@ -183,35 +183,108 @@
             </div>
             
             <div class="accordion" id="timeline-wrapper">
-                <div class="card card-outline card-secondary mb-2 timeline-item shadow-none border">
-                    <div class="card-header p-2" id="heading-0">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <button class="btn btn-link text-left text-dark font-weight-bold flex-grow-1 text-decoration-none" type="button" data-toggle="collapse" data-target="#collapse-0" aria-expanded="true">
-                                <i class="fas fa-angle-down mr-2 text-muted"></i> 
-                                Ngày <span class="day-number">1</span>: 
-                                <span class="preview-title text-primary">Tiêu đề...</span>
-                            </button>
-                            <button type="button" class="btn btn-sm btn-outline-danger border-0" onclick="removeTimeline(this)" title="Xóa">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
+    {{-- Nếu là trang Create, để sẵn 1 form trống. Nếu trang Edit, dùng vòng lặp @foreach --}}
+    <div class="card card-outline card-secondary mb-3 timeline-item shadow-sm border">
+        <div class="card-header p-2 bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <button class="btn btn-link text-left text-dark font-weight-bold flex-grow-1 text-decoration-none" type="button" data-toggle="collapse" data-target="#collapse-0">
+                    <i class="fas fa-angle-down mr-2 text-primary"></i> 
+                    Ngày <span class="day-number">1</span>: 
+                    <span class="preview-title text-primary">Hà Nội - Điểm đến...</span>
+                </button>
+                <button type="button" class="btn btn-sm btn-danger border-0 shadow-sm" onclick="removeTimeline(this)" title="Xóa ngày này">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+        </div>
 
-                    <div id="collapse-0" class="collapse show" data-parent="#timeline-wrapper">
-                        <div class="card-body bg-light">
-                            <div class="form-group">
-                                <label>Tiêu đề ngày</label>
-                                <input type="text" name="timeline_title[]" class="form-control title-input" placeholder="Ví dụ: Hà Nội → Hạ Long" onkeyup="updatePreviewTitle(this)">
-                            </div>
-                            <div class="form-group mb-0">
-                                <label>Mô tả chi tiết ngày</label>
-                                <textarea name="timeline_description[]" class="form-control" rows="4"></textarea>
-                            </div>
-                        </div>
-                    </div>
+        <div id="collapse-0" class="collapse show" data-parent="#timeline-wrapper">
+            <div class="card-body">
+                <div class="form-group">
+                    <label class="text-muted small">Tiêu đề hành trình (VD: Hà Nội - Sapa - Bản Cát Cát)</label>
+                    <input type="text" name="timeline_title[]" class="form-control title-input font-weight-bold" placeholder="Nhập lộ trình di chuyển..." onkeyup="updatePreviewTitle(this)" required>
+                </div>
+                <div class="form-group mb-0">
+                    <label class="text-muted small">Mô tả chi tiết (Các bữa ăn, điểm tham quan, hoạt động...)</label>
+                    {{-- Thêm class timeline-editor để JS nhận diện gắn CKEditor --}}
+                    <textarea name="timeline_description[]" class="form-control timeline-editor" rows="4"></textarea>
                 </div>
             </div>
         </div>
+    </div>
+</div>
+        </div>
+        <div class="row mt-4">
+    {{-- Cột: Dịch vụ bao gồm --}}
+    <div class="col-md-6 border-right">
+        <h6 class="text-bold text-success"><i class="fa fa-check-circle"></i> Dịch vụ bao gồm</h6>
+        
+        {{-- Ô nhập nhanh --}}
+        <div class="form-group mb-2">
+            <textarea id="bulk-include" class="form-control form-control-sm" rows="2" placeholder="Dán danh sách tại đây, mỗi dịch vụ 1 dòng rồi nhấn Enter..."></textarea>
+            <button type="button" class="btn btn-xs btn-info mt-1" onclick="handleBulkAdd('bulk-include', 'box-includes', 'tour_includes[]')">
+                <i class="fas fa-bolt"></i> Thêm hàng loạt
+            </button>
+        </div>
+
+        <div id="box-includes" class="mb-2 shadow-sm p-2 bg-white rounded" style="max-height: 300px; overflow-y: auto;">
+            {{-- Dùng old() để không bị mất dữ liệu nếu Admin nhập thiếu thông tin khác bị load lại trang --}}
+            @if(old('tour_includes'))
+                @foreach(old('tour_includes') as $item)
+                    <div class="input-group mb-2">
+                        <input type="text" name="tour_includes[]" class="form-control" value="{{ $item }}">
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+                @endforeach
+            @else
+                {{-- Mặc định để sẵn 1 ô trống --}}
+                <div class="input-group mb-2">
+                    <input type="text" name="tour_includes[]" class="form-control" placeholder="Nhập dịch vụ...">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
+            @endif
+        </div>
+        <button type="button" class="btn btn-outline-success btn-sm btn-block" onclick="addNewRow('box-includes', 'tour_includes[]')">+ Thêm 1 dòng</button>
+    </div>
+
+    {{-- Cột: Không bao gồm --}}
+    <div class="col-md-6">
+        <h6 class="text-bold text-danger"><i class="fa fa-times-circle"></i> Không bao gồm</h6>
+        
+        {{-- Ô nhập nhanh --}}
+        <div class="form-group mb-2">
+            <textarea id="bulk-exclude" class="form-control form-control-sm" rows="2" placeholder="Dán danh sách chi phí không bao gồm tại đây..."></textarea>
+            <button type="button" class="btn btn-xs btn-info mt-1" onclick="handleBulkAdd('bulk-exclude', 'box-excludes', 'tour_excludes[]')">
+                <i class="fas fa-bolt"></i> Thêm hàng loạt
+            </button>
+        </div>
+
+        <div id="box-excludes" class="mb-2 shadow-sm p-2 bg-white rounded" style="max-height: 300px; overflow-y: auto;">
+            @if(old('tour_excludes'))
+                @foreach(old('tour_excludes') as $item)
+                    <div class="input-group mb-2">
+                        <input type="text" name="tour_excludes[]" class="form-control" value="{{ $item }}">
+                        <div class="input-group-append">
+                            <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+                @endforeach
+            @else
+                <div class="input-group mb-2">
+                    <input type="text" name="tour_excludes[]" class="form-control" placeholder="Nhập chi phí ngoài...">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.parentElement.remove()"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
+            @endif
+        </div>
+        <button type="button" class="btn btn-outline-danger btn-sm btn-block" onclick="addNewRow('box-excludes', 'tour_excludes[]')">+ Thêm 1 dòng</button>
+    </div>
+</div>
 
         <div class="card-footer text-right bg-white border-top">
             <a href="{{ route('admin.tours.index') }}" class="btn btn-default btn-lg mr-2 border">Hủy bỏ</a>
@@ -243,6 +316,38 @@
 @stop
 
 @section('js')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+
+    <script>
+        // Hiển thị thông báo Thành công khi được Redirect về đây
+        @if(session('success'))
+            Swal.fire({
+                icon: 'success',
+                title: 'Thành công!',
+                text: '{{ session('success') }}',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+            });
+        @endif
+
+        // Bắt luôn cả thông báo Lỗi nếu có
+        @if(session('error'))
+            Swal.fire({
+                icon: 'error',
+                title: 'Thất bại!',
+                text: '{{ session('error') }}',
+                toast: true,
+                position: 'top-end',
+                showConfirmButton: false,
+                timer: 4000,
+                timerProgressBar: true,
+            });
+        @endif
+    </script>
     <script src="https://cdn.ckeditor.com/ckeditor5/39.0.1/classic/ckeditor.js"></script>
     <script>
         // 1. CKEditor
@@ -361,4 +466,107 @@
             document.getElementById('pickup-container').insertAdjacentHTML('beforeend', html);
         }
     </script>
+    <script>
+// Hàm thêm hàng loạt từ Textarea
+function handleBulkAdd(textareaId, containerId, inputName) {
+    const textarea = document.getElementById(textareaId);
+    const container = document.getElementById(containerId);
+    const lines = textarea.value.split('\n'); // Tách theo dòng
+
+    lines.forEach(line => {
+        const cleanLine = line.trim();
+        if (cleanLine !== "") {
+            const div = document.createElement('div');
+            div.className = 'input-group mb-2 animate__animated animate__fadeInIn'; // Thêm hiệu ứng nếu có animate.css
+            div.innerHTML = `
+                <input type="text" name="${inputName}" class="form-control" value="${cleanLine}">
+                <div class="input-group-append">
+                    <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.parentElement.remove()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(div);
+        }
+    });
+
+    textarea.value = ""; // Xóa trắng textarea sau khi thêm xong
+}
+
+// Giữ lại hàm thêm 1 dòng cũ cho nhu cầu nhập lẻ
+function addNewRow(containerId, inputName) {
+    const container = document.getElementById(containerId);
+    const div = document.createElement('div');
+    div.className = 'input-group mb-2';
+    div.innerHTML = `
+        <input type="text" name="${inputName}" class="form-control" placeholder="Nhập nội dung...">
+        <div class="input-group-append">
+            <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.parentElement.remove()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+    `;
+    container.appendChild(div);
+}
+// Khởi tạo CKEditor cho các ô textarea đã có sẵn lúc load trang
+document.querySelectorAll('.timeline-editor').forEach((el) => {
+    ClassicEditor.create(el).catch(error => console.error(error));
+});
+
+function addTimeline() {
+    const wrapper = document.getElementById('timeline-wrapper');
+    const count = wrapper.querySelectorAll('.timeline-item').length + 1;
+    const uniqueId = Date.now(); 
+
+    const html = `
+    <div class="card card-outline card-secondary mb-3 timeline-item shadow-sm border animate__animated animate__fadeIn">
+        <div class="card-header p-2 bg-light">
+            <div class="d-flex justify-content-between align-items-center">
+                <button class="btn btn-link text-left text-dark font-weight-bold flex-grow-1 text-decoration-none" type="button" data-toggle="collapse" data-target="#collapse-${uniqueId}">
+                    <i class="fas fa-angle-down mr-2 text-primary"></i> Ngày <span class="day-number">${count}</span>: 
+                    <span class="preview-title text-primary">Tiêu đề mới...</span>
+                </button>
+                <button type="button" class="btn btn-sm btn-danger border-0 shadow-sm" onclick="removeTimeline(this)">
+                    <i class="fas fa-trash-alt"></i>
+                </button>
+            </div>
+        </div>
+        <div id="collapse-${uniqueId}" class="collapse show" data-parent="#timeline-wrapper">
+            <div class="card-body">
+                <div class="form-group">
+                    <label class="text-muted small">Tiêu đề hành trình</label>
+                    <input type="text" name="timeline_title[]" class="form-control title-input font-weight-bold" onkeyup="updatePreviewTitle(this)" required>
+                </div>
+                <div class="form-group mb-0">
+                    <label class="text-muted small">Mô tả chi tiết</label>
+                    <textarea id="editor-${uniqueId}" name="timeline_description[]" class="form-control"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>`;
+    
+    wrapper.insertAdjacentHTML('beforeend', html);
+
+    // KÍCH HOẠT CKEDITOR CHO Ô TEXTAREA VỪA ĐƯỢC TẠO RA
+    ClassicEditor.create(document.querySelector(`#editor-${uniqueId}`)).catch(error => console.error(error));
+
+    // Cuộn trang xuống thẻ vừa tạo cho mượt
+    window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+}
+
+function removeTimeline(btn) {
+    if(confirm('Bạn có chắc chắn muốn xóa lịch trình ngày này?')) {
+        btn.closest('.timeline-item').remove();
+        // Đánh lại số thứ tự Ngày
+        document.querySelectorAll('.timeline-item').forEach((item, index) => {
+            item.querySelector('.day-number').textContent = index + 1;
+        });
+    }
+}
+
+function updatePreviewTitle(input) {
+    const preview = input.closest('.timeline-item').querySelector('.preview-title');
+    preview.textContent = input.value || 'Đang cập nhật...';
+}
+</script>
 @stop

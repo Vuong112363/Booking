@@ -93,25 +93,36 @@
     
 
                         <h3>Lịch trình chi tiết</h3>
-                        <div class="accordion-two mt-25 mb-60" id="faq-accordion-two">
-                            @php
-                                $day = 1;
-                            @endphp
-                            @foreach($tourDetail->timeline as $index => $timeline)
-                            <div class="accordion-item">
-                                <h5 class="accordion-header">
-                                    <button class="accordion-button collapsed" data-bs-toggle="collapse" data-bs-target="#collapseTwo{{ $timeline->timelineID }}" aria-expanded="false" aria-controls="collapseTwo{{ $timeline->timelineID}}">
-                                       Ngày {{ $day++ }}- {{ $timeline->title }}
-                                    </button>
-                                </h5>
-                                <div id="collapseTwo{{ $timeline->timelineID }}" class="accordion-collapse collapse" data-bs-parent="#faq-accordion-two">
-                                    <div class="accordion-body">
-                                        <p>{!! $timeline->description !!}</p>
-                                    </div>
-                                </div>
-                            </div>
-                            @endforeach
-                        </div>
+<div class="accordion-two mt-25 mb-60 shadow-sm rounded" id="faq-accordion-two">
+    @php $day = 1; @endphp
+    @foreach($tourDetail->timeline as $index => $timeline)
+    <div class="accordion-item border-0 border-bottom">
+        <h5 class="accordion-header">
+            <button class="accordion-button {{ $index == 0 ? '' : 'collapsed' }} fw-bold" 
+                    type="button" 
+                    data-bs-toggle="collapse" 
+                    data-bs-target="#collapseTimeline{{ $timeline->timelineID }}" 
+                    aria-expanded="{{ $index == 0 ? 'true' : 'false' }}" 
+                    aria-controls="collapseTimeline{{ $timeline->timelineID }}">
+                
+                {{-- Đóng khung chữ NGÀY X cực đẹp bằng CSS Bootstrap --}}
+                <span class="badge bg-primary text-white me-3 px-3 py-2 rounded-pill">
+                    NGÀY {{ $day++ }}
+                </span> 
+                {{ str_replace(['Ngày '.$index.':', 'Ngày '.($index+1).':'], '', $timeline->title) }}
+            </button>
+        </h5>
+        <div id="collapseTimeline{{ $timeline->timelineID }}" 
+             class="accordion-collapse collapse {{ $index == 0 ? 'show' : '' }}" 
+             data-bs-parent="#faq-accordion-two">
+            <div class="accordion-body bg-light p-4" style="line-height: 1.8; color: #555;">
+                {{-- Nhờ có CKEditor ở Backend, phần in ra này sẽ tự động nhận các thẻ <p>, <b>, <ul>... --}}
+                {!! $timeline->description !!}
+            </div>
+        </div>
+    </div>
+    @endforeach
+</div>
                         <div class="row pb-55">
                 {{-- Dịch vụ bao gồm --}}
                 <div class="col-md-6">

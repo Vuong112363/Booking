@@ -93,7 +93,7 @@
             </div>
             
             <div class="widget widget-duration" data-aos="fade-up" data-aos-duration="1500" data-aos-offset="50">
-                <h6 class="widget-title">Duration</h6>
+                <h6 class="widget-title">Thời gian</h6>
                 <ul class="radio-filter">
                     <li>
                         <input class="form-check-input" type="radio" name="filter_duration" id="duration_all" value="" {{ !request('filter_duration') ? 'checked' : '' }} onchange="this.form.submit()">
@@ -119,39 +119,69 @@
             </div>
             
             <div class="widget widget-tour" data-aos="fade-up" data-aos-duration="1500" data-aos-offset="50">
-                <h6 class="widget-title">Popular Tours</h6>
-                <div class="destination-item tour-grid style-three bgc-lighter">
-                    <div class="image">
-                        <span class="badge">10% Off</span>
-                        <img src="{{ asset('clients/assets/images/widgets/tour1.jpg') }}" alt="Tour">
-                    </div>
-                    <div class="content">
-                        <div class="destination-header">
-                            <span class="location"><i class="fal fa-map-marker-alt"></i> Bali, Indonesia</span>
-                            <div class="ratting">
-                                <i class="fas fa-star"></i>
-                                <span>(4.8)</span>
-                            </div>
-                        </div>
-                        <h6><a href="tour-details.html">Relinking Beach, Bali, Indonesia</a></h6>
-                    </div>
-                </div>
+    <h6 class="widget-title border-bottom pb-2 mb-4">Tour Nổi Bật</h6>
+    
+    {{-- Lặp qua danh sách tour nổi bật được truyền từ Controller --}}
+    @forelse($popularWidgetTours as $tour)
+        <div class="destination-item tour-grid style-three bgc-lighter mb-4 shadow-sm" style="border-radius: 12px; overflow: hidden;">
+            <div class="image position-relative">
+                {{-- Badge dán nhãn HOT --}}
+                <span class="badge bg-danger position-absolute top-0 start-0 m-2 z-1">🔥 HOT</span>
+                
+                {{-- Ảnh Tour động --}}
+                <a href="{{ route('tour-detail', $tour->tourid) }}">
+                    <img src="{{ asset('clients/assets/images/gallery-tours/' . ($tour->images ?? 'default.jpg')) }}" 
+                         onerror="this.src='https://images.unsplash.com/photo-1599839619722-39751411ea63?q=80&w=400&auto=format&fit=crop'"
+                         alt="{{ $tour->title }}"
+                         style="height: 180px; width: 100%; object-fit: cover; transition: transform 0.3s;"
+                         class="hover-zoom">
+                </a>
             </div>
             
-            <div class="widget widget-cta mt-30" data-aos="fade-up" data-aos-duration="1500" data-aos-offset="50">
-                <div class="content text-white">
-                    <span class="h6">Explore The World</span>
-                    <h3>Best Tourist Place</h3>
-                    <a href="tour-list.html" class="theme-btn style-two bgc-secondary">
-                        <span data-hover="Explore Now">Explore Now</span>
-                        <i class="fal fa-arrow-right"></i>
+            <div class="content p-3 bg-white">
+                <div class="destination-header d-flex justify-content-between align-items-center mb-2">
+                    <span class="location text-muted small">
+                        <i class="fal fa-map-marker-alt text-primary"></i> {{ $tour->destination }}
+                    </span>
+                    <div class="ratting text-warning small">
+                        <i class="fas fa-star"></i>
+                        <span class="text-dark fw-bold">(4.8)</span> {{-- Bạn có thể gắn $tour->rating thực tế nếu DB có --}}
+                    </div>
+                </div>
+                
+                <h6 class="mb-2" style="font-size: 15px; line-height: 1.4;">
+                    <a href="{{ route('tour-detail', $tour->tourid) }}" class="text-dark text-decoration-none title-hover">
+                        {{ $tour->title }}
                     </a>
+                </h6>
+                
+                {{-- Hiển thị giá tiền (Tìm giá min trong các lịch khởi hành) --}}
+                @php
+                    $minPrice = $tour->schedules ? $tour->schedules->min('priceadult') : 0;
+                @endphp
+                
+                <div class="price-wrap mt-2 pt-2 border-top">
+                    @if($minPrice > 0)
+                        <span class="small text-muted">Chỉ từ:</span>
+                        <span class="text-danger fw-bold ms-1">{{ number_format($minPrice, 0, ',', '.') }} đ</span>
+                    @else
+                        <span class="text-success fw-bold small">Liên hệ ngay</span>
+                    @endif
                 </div>
-                <div class="image">
-                    <img src="{{ asset('clients/assets/images/widgets/cta-widget.png') }}" alt="CTA">
-                </div>
-                <div class="cta-shape"><img src="{{ asset('clients/assets/images/widgets/cta-shape2.png') }}" alt="Shape"></div>
             </div>
+        </div>
+    @empty
+        <p class="text-muted small">Chưa có tour nổi bật nào.</p>
+    @endforelse
+</div>
+
+{{-- Thêm chút CSS cho ảnh có hiệu ứng thu phóng khi rê chuột --}}
+<style>
+    .tour-grid .image { overflow: hidden; }
+    .tour-grid .image img.hover-zoom:hover { transform: scale(1.08); }
+    .title-hover:hover { color: #ff6a00 !important; }
+</style>
+            
             
         </div>
     </form>
